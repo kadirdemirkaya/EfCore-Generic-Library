@@ -20,7 +20,7 @@ namespace EfCore.Test
         private readonly IUnitOfWork<Person> _unitOfWork;
         private ServiceCollection _services;
 
-        [OneTimeSetUp]// S�n�f genelinde yap�lacak kurulum i�lemleri
+        [OneTimeSetUp]
         public void OneTimeSetUp()
         {
 

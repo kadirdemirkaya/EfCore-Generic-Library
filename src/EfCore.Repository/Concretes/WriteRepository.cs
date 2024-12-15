@@ -131,6 +131,7 @@ namespace EfCore.Repository.Concretes
             foreach (var entity in entities)
             {
                 EntityEntry<TEntity> entityEntry = await _dbContext.Set<TEntity>().AddAsync(entity, cancellationToken).ConfigureAwait(false);
+
                 await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 primaryKeyValues.Add(entityEntry.Metadata.FindPrimaryKey().Properties.
                     Select(p => entityEntry.Property(p.Name).CurrentValue).ToArray());
