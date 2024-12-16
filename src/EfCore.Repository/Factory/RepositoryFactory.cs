@@ -21,4 +21,26 @@ namespace EfCore.Repository.Factory
             return new UnitOfWork<TEntity>(databaseOptions, serviceProvider);
         }
     }
+
+    public class RepositoryNoneStaticFactory<TDbContext>
+       where TDbContext : DbContext
+    {
+        private readonly IServiceProvider _serviceProvider;
+        public RepositoryNoneStaticFactory(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
+        public UnitOfWork<TEntity> CreateUnitOfWork<TEntity>(TDbContext dbContext)
+        where TEntity : class, new()
+        {
+            return new UnitOfWork<TEntity>(dbContext, _serviceProvider);
+        }
+
+        public UnitOfWork<TEntity> CreateUnitOfWork<TEntity>(DatabaseOptions databaseOptions)
+            where TEntity : class, new()
+        {
+            return new UnitOfWork<TEntity>(databaseOptions, _serviceProvider);
+        }
+    }
 }

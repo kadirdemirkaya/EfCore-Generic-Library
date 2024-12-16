@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EfCore.Test.Entities
 {
-    public class Product
+    public class Product : IBaseEntity
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

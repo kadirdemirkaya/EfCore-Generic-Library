@@ -27,7 +27,7 @@ namespace EfCore.Test.Data
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlServer("Server=DESKTOP-KCT444U\\SQLEXPRESS;Database=genericrepocontext;Trusted_Connection=True;TrustServerCertificate=True");
+            => options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=genericrepocontext;Trusted_Connection=True;TrustServerCertificate=True");
 
         //protected override void OnConfiguring(DbContextOptionsBuilder options)
         //     => options.UseSqlite("Data Source=MyDatabase.db");
