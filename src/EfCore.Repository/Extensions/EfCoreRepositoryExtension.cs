@@ -232,7 +232,7 @@ namespace EfCore.Repository.Extensions
 
                                if (createUnitOfWorkMethod == null)
                                {
-                                   throw new InvalidOperationException("CreateUnitOfWork metodu bulunamadı.");
+                                   throw new InvalidOperationException("CreateUnitOfWork method is not found.");
                                }
 
                                var genericMethod = createUnitOfWorkMethod.MakeGenericMethod(entityType);
