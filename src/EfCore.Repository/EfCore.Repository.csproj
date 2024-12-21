@@ -10,7 +10,7 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>EfCore.Repository</PackageId>
-		<Version>1.1.1</Version>
+		<Version>1.1.2</Version>
 		<Authors>Kadir Demirkaya</Authors>
 		<Company></Company>
 		<Description>A general library that works on all SQL based databases</Description>

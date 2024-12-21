@@ -25,7 +25,7 @@ namespace EfCore.Repository.Extensions
                        return new BaseReadRepository<TEntity>(databaseOptions, sp);
                    },
                    serviceLifetime
-               ));
+                ));
 
                 services.Add(new ServiceDescriptor(
                    typeof(IBaseWriteRepository<TEntity>),
@@ -74,15 +74,25 @@ namespace EfCore.Repository.Extensions
                   serviceLifetime
                 ));
 
+                // services.Add(new ServiceDescriptor(
+                //   typeof(IUnitOfWork<TEntity>),
+                //   sp =>
+                //   {
+                //       TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext));
+                //       return RepositoryFactory<TDbContext>.CreateUnitOfWork<TEntity>(databaseOptions, sp);
+                //   },
+                //    serviceLifetime
+                //));
+
                 services.Add(new ServiceDescriptor(
-                  typeof(IUnitOfWork<TEntity>),
-                  sp =>
-                  {
-                      TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext));
-                      return RepositoryFactory<TDbContext>.CreateUnitOfWork<TEntity>(databaseOptions, sp);
-                  },
-                   serviceLifetime
-               ));
+                 typeof(IUnitOfWork<TEntity>),
+                 sp =>
+                 {
+                     TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext));
+                     return RepositoryFactory<TDbContext>.CreateUnitOfWork<TEntity>(databaseOptions, sp);
+                 },
+                  serviceLifetime
+                ));
 
                 return services;
             }
@@ -170,7 +180,7 @@ namespace EfCore.Repository.Extensions
 
                 foreach (var entityType in entityTypes)
                 {
-                    TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext))!;
+                    //TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext))!;
 
                     var baseReadIRepositoryType = typeof(IBaseReadRepository<>).MakeGenericType(entityType);
                     var baseWriteIRepositoryType = typeof(IBaseWriteRepository<>).MakeGenericType(entityType);
@@ -186,44 +196,77 @@ namespace EfCore.Repository.Extensions
                     var readRepositoryType = typeof(ReadRepository<>).MakeGenericType(entityType);
                     var dbReadRepositoryType = typeof(DbReadRepository<>).MakeGenericType(entityType);
                     var dbWriteRepositoryType = typeof(DbWriteRepository<>).MakeGenericType(entityType);
-                    var unitOfWork = typeof(RepositoryFactory<>).MakeGenericType(dbContext.GetType());
+                    //var unitOfWork = typeof(RepositoryFactory<>).MakeGenericType(dbContext.GetType());
 
                     services.AddScoped(typeof(RepositoryNoneStaticFactory<>));
 
                     services.Add(new ServiceDescriptor(
-                        baseReadIRepositoryType,
-                        sp => Activator.CreateInstance(baseReadRepositoryType, dbContext, sp)!,
+                        typeof(TBaseType),
+                        sp =>
+                        {
+                            var dbContext = sp.GetRequiredService<TDbContext>();
+
+                            return Activator.CreateInstance(entityType, dbContext, sp)!;
+                        },
                         serviceLifetime
                     ));
+
                     services.Add(new ServiceDescriptor(
                         baseWriteIRepositoryType,
-                        sp => Activator.CreateInstance(baseWriteRepositoryType, dbContext, sp)!,
+                        sp =>
+                        {
+                            var dbContext = sp.GetRequiredService<TDbContext>();
+
+                            return Activator.CreateInstance(baseWriteRepositoryType, dbContext, sp)!;
+                        },
                         serviceLifetime
                     ));
                     services.Add(new ServiceDescriptor(
                          writeIRepositoryType,
-                         sp => Activator.CreateInstance(writeRepositoryType, dbContext, sp)!,
+                         sp =>
+                         {
+                             var dbContext = sp.GetRequiredService<TDbContext>();
+
+                             return Activator.CreateInstance(writeRepositoryType, dbContext, sp)!;
+                         },
                          serviceLifetime
                     ));
                     services.Add(new ServiceDescriptor(
                         readIRepositoryType,
-                        sp => Activator.CreateInstance(readRepositoryType, dbContext, sp)!,
+                        sp =>
+                        {
+                            var dbContext = sp.GetRequiredService<TDbContext>();
+
+                            return Activator.CreateInstance(readRepositoryType, dbContext, sp)!;
+                        },
                         serviceLifetime
                     ));
                     services.Add(new ServiceDescriptor(
                       dbReadIRepositoryType,
-                      sp => Activator.CreateInstance(dbReadRepositoryType, dbContext, sp)!,
+                      sp =>
+                      {
+                          var dbContext = sp.GetRequiredService<TDbContext>();
+
+                          return Activator.CreateInstance(dbReadRepositoryType, dbContext, sp)!;
+                      },
                       serviceLifetime
                     ));
                     services.Add(new ServiceDescriptor(
                       dbWriteIRepositoryType,
-                      sp => Activator.CreateInstance(dbWriteRepositoryType, dbContext, sp)!,
+                      sp =>
+                      {
+                          var dbContext = sp.GetRequiredService<TDbContext>();
+
+                          return Activator.CreateInstance(dbWriteRepositoryType, dbContext, sp)!;
+                      },
                       serviceLifetime
                     ));
                     services.Add(new ServiceDescriptor(
                            iUnitOfWork,
                            sp =>
                            {
+                               var dbContext = sp.GetRequiredService<TDbContext>();
+
                                var repositoryFactory = (RepositoryNoneStaticFactory<TDbContext>)sp.GetRequiredService(typeof(RepositoryNoneStaticFactory<TDbContext>));
 
                                var createUnitOfWorkMethod = repositoryFactory
