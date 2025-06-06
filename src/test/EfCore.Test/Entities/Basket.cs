@@ -13,6 +13,6 @@ namespace EfCore.Test.Entities
         public int PersonId { get; set; }
         public Person Person { get; set; }
 
-        public List<Product> Products { get; set; }
+        public List<Product> Products { get; set; } = new();
     }
 }

@@ -6,6 +6,7 @@ using EfCore.Test.Dtos;
 using EfCore.Test.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Linq.Expressions;
 
 namespace EfCore.Test
@@ -26,6 +27,8 @@ namespace EfCore.Test
         public void SetUp()
         {
             _services = new ServiceCollection();
+
+            //_services.AddAutoMapper(AssemblyReference.Assembly);
 
             InjectExtension(_services, ServiceLifetime.Scoped);
         }
@@ -80,5 +83,50 @@ namespace EfCore.Test
             Assert.Fail();
         }
 
+        [Test]
+        public async Task update_test()
+        {
+            var _sp = BuildServiceProvider();
+            var _unitOfWork = GetUnitOfWork<Person>(_sp);
+            var _writeRepo = _unitOfWork.GetWriteRepository();
+            var _readRepo = _unitOfWork.GetReadRepository();
+
+            List<Basket> baskets = new();
+            Basket basket = new()
+            {
+                PersonId = 34,
+                Description = "Sample Description" // Provide a value for the required property
+            };
+
+            basket.Products.Add(new()
+            {
+                ProductDescription = "asdasdasd"
+            });
+
+            baskets.Add(basket);
+
+            //var person = new Person() { Age = 12, Name = "REF TEST2", Basket = baskets };
+
+            //await _writeRepo.AddAsync(person);
+            //bool res = await _writeRepo.SaveChangesAsync();
+
+            //if (res is true)
+            //{s
+            //Person existPerson = await _readRepo.GetAsync(p => p.Id == person.Id);
+
+            //Person existPerson = await _readRepo.GetAsync(p => p.Id == 4, false);
+
+            var updatePerson = new Person()
+            {
+                Id = 4,
+                Name = "Updated Nameeeeeeeeeee",
+                Age = 40
+            };
+
+            bool updateResponse = await _writeRepo.UpdateAsync(updatePerson);
+
+            Console.WriteLine(updateResponse);
+            //}
+        }
     }
 }

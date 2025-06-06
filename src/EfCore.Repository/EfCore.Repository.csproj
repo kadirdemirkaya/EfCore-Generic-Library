@@ -1,27 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>EfCore.Repository</PackageId>
-		<Version>1.1.2</Version>
+		<Version>1.1.5</Version>
 		<Authors>Kadir Demirkaya</Authors>
 		<Company></Company>
 		<Description>A general library that works on all SQL based databases</Description>
 	</PropertyGroup>
-	
-  <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.0" />
-  </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Base.Repository\Base.Repository.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Base.Repository\Base.Repository.csproj" />
+	</ItemGroup>
 
 </Project>
