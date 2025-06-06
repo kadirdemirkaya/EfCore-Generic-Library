@@ -26,14 +26,14 @@ namespace EfCore.Test.Data
             Database.EnsureCreated();
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=genericrepocontext;Trusted_Connection=True;TrustServerCertificate=True");
+        //protected override void OnConfiguring(DbContextOptionsBuilder options)
+        //    => options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=genericrepocontext;Trusted_Connection=True;TrustServerCertificate=True");
 
         //protected override void OnConfiguring(DbContextOptionsBuilder options)
         //     => options.UseSqlite("Data Source=MyDatabase.db");
 
-        //protected override void OnConfiguring(DbContextOptionsBuilder options)
-        //     => options.UseNpgsql("Server=localhost;port=5432;Database=AppDbContext;User Id=postgresql;Password=123");
+        protected override void OnConfiguring(DbContextOptionsBuilder options)
+             => options.UseNpgsql("Server=localhost;port=5432;Database=AppDbContext;User Id=postgresql;Password=123");
 
         //protected override void OnConfiguring(DbContextOptionsBuilder options)
         //    => options.UseMySql(

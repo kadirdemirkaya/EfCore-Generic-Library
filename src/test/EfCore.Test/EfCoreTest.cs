@@ -51,10 +51,10 @@ namespace EfCore.Test
             //services.AddDbContext<AppDbContext>(options =>
             //     options.UseSqlite("Data Source=MyDatabase.db"));
 
-            services.AddDbContext<AppDbContext>(options =>
-                 options.UseSqlServer("Server=DESKTOP-KCT444U\\SQLEXPRESS;Database=genericrepocontext;Trusted_Connection=True;TrustServerCertificate=True"));
+            //services.AddDbContext<AppDbContext>(options =>
+            //     options.UseSqlServer("Server=DESKTOP-KCT444U\\SQLEXPRESS;Database=genericrepocontext;Trusted_Connection=True;TrustServerCertificate=True"));
 
-            //services.AddDbContext<AppDbContext>(options => options.UseNpgsql("Server=localhost;port=5432;Database=AppDbContext;User Id=postgresql;Password=123"));
+            services.AddDbContext<AppDbContext>(options => options.UseNpgsql("Server=localhost;port=5432;Database=AppDbContext;User Id=postgresql;Password=123"));
 
             //services.AddDbContext<AppDbContext>(options =>
             //    options.UseMySql(
@@ -79,8 +79,10 @@ namespace EfCore.Test
             if (services == null)
                 throw new ArgumentNullException(nameof(services));
 
-            services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer("Server=DESKTOP-KCT444U\\SQLEXPRESS;Database=genericrepocontext;Trusted_Connection=True;TrustServerCertificate=True"));
+            //services.AddDbContext<AppDbContext>(options =>
+            //    options.UseSqlServer("Server=DESKTOP-KCT444U\\SQLEXPRESS;Database=genericrepocontext;Trusted_Connection=True;TrustServerCertificate=True"));
+
+            services.AddDbContext<AppDbContext>(options => options.UseNpgsql("Server=localhost;port=5432;Database=AppDbContext;User Id=postgresql;Password=123"));
 
             #region with options and service provider
             //var _sp = BuildServiceProvider();
@@ -261,7 +263,6 @@ namespace EfCore.Test
         [Test]
         public async Task unitofwork_insert_test()
         {
-
             var _sp = BuildServiceProvider();
             var _unitOfWork = GetUnitOfWork<Person>(_sp);
             var _writeRepo = _unitOfWork.GetWriteRepository();
