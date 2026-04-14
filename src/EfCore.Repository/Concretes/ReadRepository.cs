@@ -443,7 +443,14 @@ namespace EfCore.Repository.Concretes
 
         #region Count
         public async Task<int> CountAsync(Expression<Func<TEntity, bool>> filter, CancellationToken cancellationToken = default)
-            => await _dbContext.Set<TEntity>().CountAsync(cancellationToken).ConfigureAwait(false);
+        {
+            IQueryable<TEntity> query = _dbContext.Set<TEntity>();
+
+            if (filter != null)
+                query = query.Where(filter);
+
+            return await query.CountAsync(cancellationToken).ConfigureAwait(false);
+        }
 
 
         public async Task<int> CountAsync(IEnumerable<Expression<Func<TEntity, bool>>> filters, CancellationToken cancellationToken = default)
@@ -493,7 +500,7 @@ namespace EfCore.Repository.Concretes
         }
 
         public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> filter, bool asNoTracking, CancellationToken cancellationToken = default)
-            => await GetListAsync(filter, false, cancellationToken);
+            => await GetListAsync(filter, null, asNoTracking, cancellationToken);
 
         public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> filter, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes, bool asNoTracking = false, CancellationToken cancellationToken = default)
         {
