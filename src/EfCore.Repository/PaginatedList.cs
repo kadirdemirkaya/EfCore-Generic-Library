@@ -25,6 +25,6 @@
 
         public long TotalItems { get; }
 
-        public List<TEntity> Items { get; }
+        public IReadOnlyList<TEntity> Items { get; private set; }
     }
 }

@@ -95,15 +95,6 @@ namespace EfCore.Repository
             return query;
         }
 
-        private static void Add_AsNoTracking<TEntity>(IQueryable<TEntity> query, Specification<TEntity> specification)
-             where TEntity : class
-        {
-            if (specification.AsNoTracking)
-            {
-                query = query.AsNoTracking();
-            }
-        }
-
         private static IQueryable<TEntity> Add_Skip<TEntity>(IQueryable<TEntity> query, Specification<TEntity> specification)
             where TEntity : class
         {
