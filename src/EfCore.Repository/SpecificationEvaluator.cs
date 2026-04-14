@@ -10,11 +10,9 @@ namespace EfCore.Repository
         {
             IQueryable<TEntity> query = GetSpecifiedQuery(inputQuery, (SpecificationBase<TEntity>)specification);
 
-            //Add_AsNoTracking(query, specification);
+            query = Add_Skip(query, specification);
 
-            Add_Skip(query, specification);
-
-            Add_Take(query, specification);
+            query = Add_Take(query, specification);
 
             return query;
         }
@@ -106,7 +104,7 @@ namespace EfCore.Repository
             }
         }
 
-        private static void Add_Skip<TEntity>(IQueryable<TEntity> query, Specification<TEntity> specification)
+        private static IQueryable<TEntity> Add_Skip<TEntity>(IQueryable<TEntity> query, Specification<TEntity> specification)
             where TEntity : class
         {
             if (specification.Skip != null)
@@ -118,9 +116,11 @@ namespace EfCore.Repository
 
                 query = query.Skip((int)specification.Skip);
             }
+
+            return query;
         }
 
-        private static void Add_Take<TEntity>(IQueryable<TEntity> query, Specification<TEntity> specification)
+        private static IQueryable<TEntity> Add_Take<TEntity>(IQueryable<TEntity> query, Specification<TEntity> specification)
               where TEntity : class
         {
             if (specification.Take != null)
@@ -132,6 +132,8 @@ namespace EfCore.Repository
 
                 query = query.Take((int)specification.Take);
             }
+
+            return query;
         }
     }
 }
