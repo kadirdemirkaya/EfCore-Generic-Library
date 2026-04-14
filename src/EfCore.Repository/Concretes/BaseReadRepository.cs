@@ -24,7 +24,7 @@ namespace EfCore.Repository.Concretes
         {
             if (dbContext == null)
             {
-                throw new ArgumentNullException(nameof(_dbContext), "DatabaseOptions cannot be null");
+                throw new ArgumentNullException(nameof(dbContext), "DbContext cannot be null");
             }
             _dbContext = dbContext;
         }
@@ -33,7 +33,7 @@ namespace EfCore.Repository.Concretes
         {
             if (dbContext == null)
             {
-                throw new ArgumentNullException(nameof(_dbContext), "DatabaseOptions cannot be null");
+                throw new ArgumentNullException(nameof(dbContext), "DbContext cannot be null");
             }
             _dbContext = dbContext;
             _serviceProvider = serviceProvider;
@@ -81,20 +81,15 @@ namespace EfCore.Repository.Concretes
 
             return await GetByIdAsync(id, false, cancellationToken);
         }
-        private async Task<TEntity> GetByIdAsync(object id, bool asNoTracking, CancellationToken cancellationToken = default)
+        protected static Expression<Func<TEntity, bool>> BuildPrimaryKeyExpression(object id, IEntityType entityType)
         {
-            if (id == null)
-                throw new ArgumentNullException(nameof(id));
-
-            IEntityType entityType = _dbContext.Model.FindEntityType(typeof(TEntity));
-
             string primaryKeyName = entityType.FindPrimaryKey().Properties.Select(p => p.Name).FirstOrDefault();
             Type primaryKeyType = entityType.FindPrimaryKey().Properties.Select(p => p.ClrType).FirstOrDefault();
 
             if (primaryKeyName == null || primaryKeyType == null)
                 throw new ArgumentException("Entity does not have any primary key defined", nameof(id));
 
-            object primaryKeyValue = null;
+            object primaryKeyValue;
 
             try
             {
@@ -109,7 +104,16 @@ namespace EfCore.Repository.Concretes
             MemberExpression me = Expression.Property(pe, primaryKeyName);
             ConstantExpression constant = Expression.Constant(primaryKeyValue, primaryKeyType);
             BinaryExpression body = Expression.Equal(me, constant);
-            Expression<Func<TEntity, bool>> expressionTree = Expression.Lambda<Func<TEntity, bool>>(body, new[] { pe });
+            return Expression.Lambda<Func<TEntity, bool>>(body, new[] { pe });
+        }
+
+        private async Task<TEntity> GetByIdAsync(object id, bool asNoTracking, CancellationToken cancellationToken = default)
+        {
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
+
+            IEntityType entityType = _dbContext.Model.FindEntityType(typeof(TEntity));
+            Expression<Func<TEntity, bool>> expressionTree = BuildPrimaryKeyExpression(id, entityType);
 
             IQueryable<TEntity> query = _dbContext.Set<TEntity>();
 

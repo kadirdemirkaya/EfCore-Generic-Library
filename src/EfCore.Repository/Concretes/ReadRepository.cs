@@ -361,29 +361,7 @@ namespace EfCore.Repository.Concretes
                 throw new ArgumentNullException(nameof(id));
 
             IEntityType entityType = _dbContext.Model.FindEntityType(typeof(TEntity));
-
-            string primaryKeyName = entityType.FindPrimaryKey().Properties.Select(p => p.Name).FirstOrDefault();
-            Type primaryKeyType = entityType.FindPrimaryKey().Properties.Select(p => p.ClrType).FirstOrDefault();
-
-            if (primaryKeyName == null || primaryKeyType == null)
-                throw new ArgumentException("Entity does not have any primary key defined", nameof(id));
-
-            object primaryKeyValue = null;
-
-            try
-            {
-                primaryKeyValue = Convert.ChangeType(id, primaryKeyType, CultureInfo.InvariantCulture);
-            }
-            catch (Exception)
-            {
-                throw new ArgumentException($"You can not assign a value of type {id.GetType()} to a property of type {primaryKeyType}");
-            }
-
-            ParameterExpression pe = Expression.Parameter(typeof(TEntity), "entity");
-            MemberExpression me = Expression.Property(pe, primaryKeyName);
-            ConstantExpression constant = Expression.Constant(primaryKeyValue, primaryKeyType);
-            BinaryExpression body = Expression.Equal(me, constant);
-            Expression<Func<TEntity, bool>> expressionTree = Expression.Lambda<Func<TEntity, bool>>(body, new[] { pe });
+            Expression<Func<TEntity, bool>> expressionTree = BuildPrimaryKeyExpression(id, entityType);
 
             IQueryable<TEntity> query = _dbContext.Set<TEntity>();
 
@@ -405,29 +383,7 @@ namespace EfCore.Repository.Concretes
                 throw new ArgumentNullException(nameof(mapFilter));
 
             IEntityType entityType = _dbContext.Model.FindEntityType(typeof(TEntity));
-
-            string primaryKeyName = entityType.FindPrimaryKey().Properties.Select(p => p.Name).FirstOrDefault();
-            Type primaryKeyType = entityType.FindPrimaryKey().Properties.Select(p => p.ClrType).FirstOrDefault();
-
-            if (primaryKeyName == null || primaryKeyType == null)
-                throw new ArgumentException("Entity does not have any primary key defined", nameof(id));
-
-            object primaryKeyValue = null;
-
-            try
-            {
-                primaryKeyValue = Convert.ChangeType(id, primaryKeyType, CultureInfo.InvariantCulture);
-            }
-            catch (Exception)
-            {
-                throw new ArgumentException($"You can not assign a value of type {id.GetType()} to a property of type {primaryKeyType}");
-            }
-
-            ParameterExpression pe = Expression.Parameter(typeof(TEntity), "entity");
-            MemberExpression me = Expression.Property(pe, primaryKeyName);
-            ConstantExpression constant = Expression.Constant(primaryKeyValue, primaryKeyType);
-            BinaryExpression body = Expression.Equal(me, constant);
-            Expression<Func<TEntity, bool>> expressionTree = Expression.Lambda<Func<TEntity, bool>>(body, new[] { pe });
+            Expression<Func<TEntity, bool>> expressionTree = BuildPrimaryKeyExpression(id, entityType);
 
             IQueryable<TEntity> query = _dbContext.Set<TEntity>();
 
