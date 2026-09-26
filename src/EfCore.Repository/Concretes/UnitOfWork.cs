@@ -28,6 +28,7 @@ namespace EfCore.Repository.Concretes
         {
             _databaseOptions = databaseOptions;
             _serviceProvider = serviceProvider;
+            _dbContext = databaseOptions?.Connection as DbContext;
         }
 
         public ITable GetTable() => new Table(_dbContext);

@@ -21,8 +21,10 @@ namespace EfCore.Repository.Unit.Test.Data
 
         public string ConnectionString { get; }
 
-        public TestDbContext CreateContext()
-            => new(new DbContextOptionsBuilder<TestDbContext>().UseSqlite(ConnectionString).Options);
+        public DbContextOptions<TestDbContext> CreateOptions()
+            => new DbContextOptionsBuilder<TestDbContext>().UseSqlite(ConnectionString).Options;
+
+        public TestDbContext CreateContext() => new(CreateOptions());
 
         public void ConfigureContext(DbContextOptionsBuilder builder)
             => builder.UseSqlite(ConnectionString);
