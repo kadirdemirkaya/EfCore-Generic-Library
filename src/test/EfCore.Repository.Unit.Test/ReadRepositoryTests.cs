@@ -160,6 +160,39 @@ namespace EfCore.Repository.Unit.Test
         }
 
         [Test]
+        public async Task GetByIdAsync_KeyValuesArray_ReturnsEntity()
+        {
+            int id = _context.Persons.Single(p => p.Name == "Grace").Id;
+
+            Person person = await _repository.GetByIdAsync(new object[] { id });
+
+            Assert.That(person.Name, Is.EqualTo("Grace"));
+        }
+
+        [Test]
+        public async Task GetByIdAsync_CompositeKey_ReturnsEntity()
+        {
+            _context.OrderLines.AddRange(
+                new OrderLine { OrderId = 1, LineNumber = 1, Product = "keyboard" },
+                new OrderLine { OrderId = 1, LineNumber = 2, Product = "mouse" },
+                new OrderLine { OrderId = 2, LineNumber = 1, Product = "screen" });
+            _context.SaveChanges();
+            ReadRepository<OrderLine> repository = new(_context);
+
+            OrderLine line = await repository.GetByIdAsync(new object[] { 1, "2" }, true);
+
+            Assert.That(line.Product, Is.EqualTo("mouse"));
+        }
+
+        [Test]
+        public void GetByIdAsync_CompositeKey_WrongValueCount_Throws()
+        {
+            ReadRepository<OrderLine> repository = new(_context);
+
+            Assert.ThrowsAsync<ArgumentException>(() => repository.GetByIdAsync(new object[] { 1, 2, 3 }));
+        }
+
+        [Test]
         public void GetByIdAsync_NullId_Throws()
         {
             Assert.ThrowsAsync<ArgumentNullException>(() => _repository.GetByIdAsync(null, false));
