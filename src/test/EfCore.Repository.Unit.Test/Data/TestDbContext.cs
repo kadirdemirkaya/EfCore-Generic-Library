@@ -11,6 +11,8 @@ namespace EfCore.Repository.Unit.Test.Data
 
         public DbSet<Basket> Baskets { get; set; }
 
+        public DbSet<Tag> Tags { get; set; }
+
         public TestDbContext()
         {
         }

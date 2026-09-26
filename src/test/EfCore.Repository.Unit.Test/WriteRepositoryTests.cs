@@ -103,6 +103,31 @@ namespace EfCore.Repository.Unit.Test
         }
 
         [Test]
+        public async Task UpdateAsync_UntrackedEntityWithStringKey_Persists()
+        {
+            WriteRepository<Tag> repository = new(_context);
+            await repository.InsertAsync(new Tag { Code = "net", Label = "dotnet" });
+            repository.ClearChangeTracker();
+
+            bool updated = await repository.UpdateAsync(new Tag { Code = "net", Label = ".NET" });
+
+            using TestDbContext context = _database.CreateContext();
+            Assert.Multiple(() =>
+            {
+                Assert.That(updated, Is.True);
+                Assert.That(context.Tags.Single().Label, Is.EqualTo(".NET"));
+            });
+        }
+
+        [Test]
+        public void UpdateAsync_NullStringKey_Throws()
+        {
+            WriteRepository<Tag> repository = new(_context);
+
+            Assert.ThrowsAsync<InvalidOperationException>(() => repository.UpdateAsync(new Tag { Label = "orphan" }));
+        }
+
+        [Test]
         public async Task DeleteAsync_RemovesEntity()
         {
             Person person = new() { Name = "Ada" };

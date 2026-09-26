@@ -106,7 +106,7 @@ namespace EfCore.Repository.Concretes
 
                     object primaryValue = entity.GetType().GetProperty(primaryKeyName).GetValue(entity, null);
 
-                    if (primaryKeyDefaultValue.Equals(primaryValue))
+                    if (Equals(primaryKeyDefaultValue, primaryValue))
                     {
                         throw new InvalidOperationException("The primary key value of the entity to be updated is not valid.");
                     }
