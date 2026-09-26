@@ -26,6 +26,9 @@ namespace EfCore.Repository.Unit.Test.Data
 
         public TestDbContext CreateContext() => new(CreateOptions());
 
+        public TestDbContext CreateContext(CommandCounter counter)
+            => new(new DbContextOptionsBuilder<TestDbContext>().UseSqlite(ConnectionString).AddInterceptors(counter).Options);
+
         public void ConfigureContext(DbContextOptionsBuilder builder)
             => builder.UseSqlite(ConnectionString);
 
