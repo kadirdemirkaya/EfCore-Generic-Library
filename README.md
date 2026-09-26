@@ -23,6 +23,7 @@ public class PersonService(IUnitOfWork<Person> unitOfWork)
 ## Features
 
 - Generic read and write repositories with filtering, includes, tracking control and projection
+- Lookup by primary key, including composite keys (`GetByIdAsync(new object[] { ... })`)
 - Unit of work per entity with access to every repository flavour
 - Specifications: conditions, includes, ordering, skip/take and no-tracking in one object
 - Pagination with `PaginatedList<T>` (total items, total pages, page index/size)
@@ -66,6 +67,7 @@ services.EfCoreRepositoryServiceRegistration<Person, AppDbContext>(
 IReadRepository<Person> read = unitOfWork.GetReadRepository();
 
 Person person = await read.GetByIdAsync(7);
+OrderLine line = await orderLines.GetByIdAsync(new object[] { orderId, lineNumber });
 Person first = await read.GetAsync(p => p.Name == "Ada", q => q.Include(p => p.Baskets));
 List<Person> list = await read.GetListAsync(p => p.Age > 30, asNoTracking: true);
 int count = await read.CountAsync(p => p.Age > 30);

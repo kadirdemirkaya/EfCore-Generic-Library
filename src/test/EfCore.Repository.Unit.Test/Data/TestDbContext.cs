@@ -13,12 +13,19 @@ namespace EfCore.Repository.Unit.Test.Data
 
         public DbSet<Tag> Tags { get; set; }
 
+        public DbSet<OrderLine> OrderLines { get; set; }
+
         public TestDbContext()
         {
         }
 
         public TestDbContext(DbContextOptions<TestDbContext> options) : base(options)
         {
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<OrderLine>().HasKey(l => new { l.OrderId, l.LineNumber });
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

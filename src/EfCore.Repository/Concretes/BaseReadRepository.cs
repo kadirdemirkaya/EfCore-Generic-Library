@@ -83,28 +83,44 @@ namespace EfCore.Repository.Concretes
         }
         protected static Expression<Func<TEntity, bool>> BuildPrimaryKeyExpression(object id, IEntityType entityType)
         {
-            string primaryKeyName = entityType.FindPrimaryKey().Properties.Select(p => p.Name).FirstOrDefault();
-            Type primaryKeyType = entityType.FindPrimaryKey().Properties.Select(p => p.ClrType).FirstOrDefault();
+            IReadOnlyList<IProperty> keyProperties = entityType.FindPrimaryKey()?.Properties;
 
-            if (primaryKeyName == null || primaryKeyType == null)
+            if (keyProperties == null || keyProperties.Count == 0)
                 throw new ArgumentException("Entity does not have any primary key defined", nameof(id));
 
-            object primaryKeyValue;
+            object[] keyValues = id as object[] ?? new[] { id };
+
+            if (id is object[] && keyValues.Length != keyProperties.Count)
+                throw new ArgumentException($"{typeof(TEntity).Name} has {keyProperties.Count} primary key properties but {keyValues.Length} values were given.", nameof(id));
+
+            ParameterExpression pe = Expression.Parameter(typeof(TEntity), "entity");
+            Expression body = null;
+
+            for (int i = 0; i < keyValues.Length; i++)
+            {
+                Expression equal = Expression.Equal(
+                    Expression.Property(pe, keyProperties[i].Name),
+                    Expression.Constant(ConvertKeyValue(keyValues[i], keyProperties[i].ClrType), keyProperties[i].ClrType));
+
+                body = body == null ? equal : Expression.AndAlso(body, equal);
+            }
+
+            return Expression.Lambda<Func<TEntity, bool>>(body, new[] { pe });
+        }
+
+        private static object ConvertKeyValue(object value, Type keyType)
+        {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value), "Primary key values cannot be null.");
 
             try
             {
-                primaryKeyValue = Convert.ChangeType(id, primaryKeyType, CultureInfo.InvariantCulture);
+                return Convert.ChangeType(value, keyType, CultureInfo.InvariantCulture);
             }
             catch (Exception)
             {
-                throw new ArgumentException($"You can not assign a value of type {id.GetType()} to a property of type {primaryKeyType}");
+                throw new ArgumentException($"You can not assign a value of type {value.GetType()} to a property of type {keyType}");
             }
-
-            ParameterExpression pe = Expression.Parameter(typeof(TEntity), "entity");
-            MemberExpression me = Expression.Property(pe, primaryKeyName);
-            ConstantExpression constant = Expression.Constant(primaryKeyValue, primaryKeyType);
-            BinaryExpression body = Expression.Equal(me, constant);
-            return Expression.Lambda<Func<TEntity, bool>>(body, new[] { pe });
         }
 
         private async Task<TEntity> GetByIdAsync(object id, bool asNoTracking, CancellationToken cancellationToken = default)
