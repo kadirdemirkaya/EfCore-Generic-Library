@@ -45,6 +45,14 @@ namespace EfCore.Repository.Unit.Test
         }
 
         [Test]
+        public void GetListAsync_CanceledToken_Throws()
+        {
+            BaseReadRepository<Person> repository = new(_context);
+
+            Assert.CatchAsync<OperationCanceledException>(() => repository.GetListAsync(new CancellationToken(true)));
+        }
+
+        [Test]
         public async Task GetListAsync_WithFilter_ReturnsMatchingEntities()
         {
             List<Person> persons = await _repository.GetListAsync(p => p.Age > 40);

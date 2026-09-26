@@ -58,18 +58,25 @@ namespace EfCore.Repository.Concretes
         }
 
         public async Task<bool> ExecuteCommandAsync(string command, CancellationToken cancellationToken = default)
-         => await _dbContext.Database.ExecuteSqlRawAsync(command, cancellationToken) > 0;
+         => await _dbContext.Database.ExecuteSqlRawAsync(command, cancellationToken).ConfigureAwait(false) > 0;
 
         public async Task<bool> ExecuteCommandAsync(string command, params object[] parameters)
-            => await _dbContext.Database.ExecuteSqlRawAsync(command, parameters) > 0;
+            => await _dbContext.Database.ExecuteSqlRawAsync(command, parameters).ConfigureAwait(false) > 0;
 
         public async Task<bool> ExecuteCommandAsync(string command, IEnumerable<object> parameters, CancellationToken cancellationToken = default)
-            => await _dbContext.Database.ExecuteSqlRawAsync(command, parameters, cancellationToken) > 0;
+            => await _dbContext.Database.ExecuteSqlRawAsync(command, parameters, cancellationToken).ConfigureAwait(false) > 0;
 
         public async Task<IDbContextTransaction> BeginTransactionAsync(
         IsolationLevel isolationLevel = IsolationLevel.Unspecified,
         CancellationToken cancellationToken = default)
-          => await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        {
+            if (isolationLevel == IsolationLevel.Unspecified)
+            {
+                return await _dbContext.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            return await _dbContext.Database.BeginTransactionAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
+        }
 
         public async Task<bool> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
@@ -147,6 +154,6 @@ namespace EfCore.Repository.Concretes
         }
 
         public async Task<bool> SaveChangesAsync()
-            => await _dbContext.SaveChangesAsync() > 0;
+            => await _dbContext.SaveChangesAsync().ConfigureAwait(false) > 0;
     }
 }

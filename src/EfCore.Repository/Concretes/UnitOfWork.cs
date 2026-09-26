@@ -44,6 +44,6 @@ namespace EfCore.Repository.Concretes
 
         public IWriteRepository<TEntity> GetWriteRepository() => _serviceProvider.GetRequiredService<IWriteRepository<TEntity>>();
 
-        public async Task<bool> SaveChangesAsync() => await _dbContext.SaveChangesAsync() > 0;
+        public async Task<bool> SaveChangesAsync() => await _dbContext.SaveChangesAsync().ConfigureAwait(false) > 0;
     }
 }
