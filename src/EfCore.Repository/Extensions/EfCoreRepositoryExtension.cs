@@ -5,6 +5,7 @@ using EfCore.Repository.Concretes;
 using EfCore.Repository.Factory;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Reflection;
 using System.Reflection.Metadata;
 
@@ -158,16 +159,16 @@ namespace EfCore.Repository.Extensions
         public static IServiceCollection EfCoreRepositoryServiceRegistration<TBaseType, TDbContext>(this IServiceCollection services, ServiceLifetime serviceLifetime, params Assembly[] assemblies)
              where TDbContext : DbContext
         {
+            services.TryAdd(new ServiceDescriptor(typeof(RepositoryNoneStaticFactory<>), typeof(RepositoryNoneStaticFactory<>), ServiceLifetime.Scoped));
+
             foreach (var assembly in assemblies)
             {
                 var entityTypes = assembly.GetTypes()
-                                          .Where(t => typeof(TBaseType).IsAssignableFrom(t) && !t.IsInterface)
+                                          .Where(t => typeof(TBaseType).IsAssignableFrom(t) && IsConstructableEntity(t))
                                           .ToList();
 
                 foreach (var entityType in entityTypes)
                 {
-                    //TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext))!;
-
                     var baseReadIRepositoryType = typeof(IBaseReadRepository<>).MakeGenericType(entityType);
                     var baseWriteIRepositoryType = typeof(IBaseWriteRepository<>).MakeGenericType(entityType);
                     var writeIRepositoryType = typeof(IWriteRepository<>).MakeGenericType(entityType);
@@ -182,9 +183,6 @@ namespace EfCore.Repository.Extensions
                     var readRepositoryType = typeof(ReadRepository<>).MakeGenericType(entityType);
                     var dbReadRepositoryType = typeof(DbReadRepository<>).MakeGenericType(entityType);
                     var dbWriteRepositoryType = typeof(DbWriteRepository<>).MakeGenericType(entityType);
-                    //var unitOfWork = typeof(RepositoryFactory<>).MakeGenericType(dbContext.GetType());
-
-                    services.AddScoped(typeof(RepositoryNoneStaticFactory<>));
 
                     services.Add(new ServiceDescriptor(
                         typeof(TBaseType),
@@ -197,6 +195,16 @@ namespace EfCore.Repository.Extensions
                         serviceLifetime
                     ));
 
+                    services.Add(new ServiceDescriptor(
+                        baseReadIRepositoryType,
+                        sp =>
+                        {
+                            var dbContext = sp.GetRequiredService<TDbContext>();
+
+                            return Activator.CreateInstance(baseReadRepositoryType, dbContext, sp)!;
+                        },
+                        serviceLifetime
+                    ));
                     services.Add(new ServiceDescriptor(
                         baseWriteIRepositoryType,
                         sp =>
@@ -274,5 +282,11 @@ namespace EfCore.Repository.Extensions
             }
             return services;
         }
+
+        private static bool IsConstructableEntity(Type type)
+            => type.IsClass
+               && !type.IsAbstract
+               && !type.IsGenericTypeDefinition
+               && type.GetConstructor(Type.EmptyTypes) != null;
     }
 }
