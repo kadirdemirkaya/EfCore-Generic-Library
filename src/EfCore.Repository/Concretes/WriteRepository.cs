@@ -9,9 +9,9 @@ namespace EfCore.Repository.Concretes
     public class WriteRepository<TEntity> : BaseWriteRepository<TEntity>, IWriteRepository<TEntity>
         where TEntity : class, new()
     {
-        public DbContext _dbContext { get; set; }
-        public IServiceProvider _serviceProvider { get; set; }
-        public DatabaseOptions _databaseOptions { get; set; }
+        public new DbContext _dbContext { get; set; }
+        public new IServiceProvider _serviceProvider { get; set; }
+        public new DatabaseOptions _databaseOptions { get; set; }
 
         public WriteRepository(DbContext dbContext)
             : base(dbContext)
@@ -50,7 +50,7 @@ namespace EfCore.Repository.Concretes
             _serviceProvider = serviceProvider;
         }
 
-        public DbContext Table
+        public new DbContext Table
         {
             get
             {

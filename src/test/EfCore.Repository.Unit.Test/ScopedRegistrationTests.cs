@@ -61,6 +61,27 @@ namespace EfCore.Repository.Unit.Test
         }
 
         [Test]
+        public void HiddenTableMembers_ReturnSameContextAsBase()
+        {
+            using IServiceScope scope = _provider.CreateScope();
+            TestDbContext context = scope.ServiceProvider.GetRequiredService<TestDbContext>();
+            Concretes.ReadRepository<Person> read = new(context);
+            Concretes.WriteRepository<Person> write = new(context);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(read.Table, Is.SameAs(context));
+                Assert.That(((Concretes.BaseReadRepository<Person>)read).Table, Is.SameAs(context));
+                Assert.That(((Base.Repository.Abstractions.ITable)read).Table, Is.SameAs(context));
+                Assert.That(read._dbContext, Is.SameAs(((Concretes.BaseReadRepository<Person>)read)._dbContext));
+                Assert.That(write.Table, Is.SameAs(context));
+                Assert.That(((Concretes.BaseWriteRepository<Person>)write).Table, Is.SameAs(context));
+                Assert.That(((Base.Repository.Abstractions.ITable)write).Table, Is.SameAs(context));
+                Assert.That(write._dbContext, Is.SameAs(((Concretes.BaseWriteRepository<Person>)write)._dbContext));
+            });
+        }
+
+        [Test]
         public void DifferentScopes_GetDifferentContexts()
         {
             using IServiceScope first = _provider.CreateScope();
