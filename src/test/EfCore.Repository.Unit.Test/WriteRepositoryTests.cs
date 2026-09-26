@@ -2,6 +2,8 @@ using EfCore.Repository.Concretes;
 using EfCore.Repository.Unit.Test.Data;
 using EfCore.Repository.Unit.Test.Entities;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace EfCore.Repository.Unit.Test
 {
@@ -135,6 +137,28 @@ namespace EfCore.Repository.Unit.Test
             }
 
             Assert.That(CountPersons(), Is.EqualTo(0));
+        }
+
+        [Test]
+        public async Task BeginTransactionAsync_WithIsolationLevel_UsesRequestedLevel()
+        {
+            await using IDbContextTransaction transaction = await _repository.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+
+            Assert.That(transaction.GetDbTransaction().IsolationLevel, Is.EqualTo(IsolationLevel.ReadUncommitted));
+        }
+
+        [Test]
+        public async Task BeginTransactionAsync_Unspecified_UsesProviderDefault()
+        {
+            await using IDbContextTransaction transaction = await _repository.BeginTransactionAsync();
+
+            Assert.That(transaction.GetDbTransaction().IsolationLevel, Is.EqualTo(IsolationLevel.Serializable));
+        }
+
+        [Test]
+        public void BeginTransactionAsync_CanceledToken_Throws()
+        {
+            Assert.CatchAsync<OperationCanceledException>(() => _repository.BeginTransactionAsync(IsolationLevel.ReadUncommitted, new CancellationToken(true)));
         }
 
         [Test]

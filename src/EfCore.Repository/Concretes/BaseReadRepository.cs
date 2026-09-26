@@ -63,23 +63,23 @@ namespace EfCore.Repository.Concretes
         }
 
         public async Task<List<TEntity>> ExecuteQueryAsync(string query)
-            => await _dbContext.Set<TEntity>().FromSqlRaw(query).ToListAsync();
+            => await _dbContext.Set<TEntity>().FromSqlRaw(query).ToListAsync().ConfigureAwait(false);
 
         public async Task<List<TEntity>> ExecuteQueryAsync(string query, params object[] parameters)
-            => await _dbContext.Set<TEntity>().FromSqlRaw(query, parameters).ToListAsync();
+            => await _dbContext.Set<TEntity>().FromSqlRaw(query, parameters).ToListAsync().ConfigureAwait(false);
 
         public IQueryable<TEntity> GetQueryable()
           => _dbContext.Set<TEntity>();
 
         public async Task<List<TEntity>> GetListAsync(CancellationToken cancellationToken = default)
-          => await _dbContext.Set<TEntity>().ToListAsync();
+          => await _dbContext.Set<TEntity>().ToListAsync(cancellationToken).ConfigureAwait(false);
 
         public async Task<TEntity> GetByIdAsync(object id, CancellationToken cancellationToken = default)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
 
-            return await GetByIdAsync(id, false, cancellationToken);
+            return await GetByIdAsync(id, false, cancellationToken).ConfigureAwait(false);
         }
         protected static Expression<Func<TEntity, bool>> BuildPrimaryKeyExpression(object id, IEntityType entityType)
         {
