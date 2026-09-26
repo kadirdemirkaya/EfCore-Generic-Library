@@ -247,6 +247,59 @@ namespace EfCore.Repository.Unit.Test
         }
 
         [Test]
+        public void Any_WithFilter_UsesSingleQuery()
+        {
+            CommandCounter counter = new();
+            using TestDbContext context = _database.CreateContext(counter);
+            ReadRepository<Person> repository = new(context);
+
+            repository.Any(out Person _, p => p.Age > 40);
+
+            Assert.That(counter.Synchronous, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Any_WithFilter_NoMatch_OutputsNull()
+        {
+            bool exists = _repository.Any(out Person person, p => p.Age > 1000, true);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(exists, Is.False);
+                Assert.That(person, Is.Null);
+            });
+        }
+
+        [Test]
+        public void Any_WithFilter_OutputsListUsingSingleQuery()
+        {
+            CommandCounter counter = new();
+            using TestDbContext context = _database.CreateContext(counter);
+            ReadRepository<Person> repository = new(context);
+
+            bool exists = repository.Any(out List<Person> persons, p => p.Age > 40);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(exists, Is.True);
+                Assert.That(persons, Has.Count.EqualTo(3));
+                Assert.That(counter.Synchronous, Is.EqualTo(1));
+            });
+        }
+
+        [Test]
+        public void Any_WithFilter_NoMatch_OutputsNullList()
+        {
+            bool exists = _repository.Any(out List<Person> persons, p => p.Age > 1000);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(exists, Is.False);
+                Assert.That(persons, Is.Null);
+            });
+        }
+
+        [Test]
         public void Any_WithProjection_OutputsList()
         {
             bool exists = _repository.Any(out List<PersonDto> persons, p => p.Age > 40, ToDto);

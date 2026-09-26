@@ -88,14 +88,9 @@ namespace EfCore.Repository.Concretes
                 query = query.Where(filter);
             }
 
-            bool exists = query.Any();
+            entity = query.FirstOrDefault();
 
-            if (exists)
-            {
-                entity = query.FirstOrDefault();
-            }
-
-            return exists;
+            return entity != null;
         }
 
         public bool Any(out List<TEntity> entity, Expression<Func<TEntity, bool>> filter, bool asNoTracking = false)
@@ -114,14 +109,15 @@ namespace EfCore.Repository.Concretes
                 query = query.Where(filter);
             }
 
-            bool exists = query.Any();
+            List<TEntity> entities = query.ToList();
 
-            if (exists)
+            if (entities.Count == 0)
             {
-                entity = query.ToList();
+                return false;
             }
 
-            return exists;
+            entity = entities;
+            return true;
         }
 
         public async Task<bool> AnyAsync(Expression<Func<TEntity, bool>> filter, bool asNoTracking = false, CancellationToken cancellationToken = default)
