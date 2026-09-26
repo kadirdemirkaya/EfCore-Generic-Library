@@ -212,6 +212,41 @@ namespace EfCore.Repository.Unit.Test
         }
 
         [Test]
+        public void Any_WithoutFilter_OutputsFirstEntity()
+        {
+            bool exists = _repository.Any(out Person person);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(exists, Is.True);
+                Assert.That(person, Is.Not.Null);
+            });
+        }
+
+        [Test]
+        public void Any_WithoutFilter_EmptySet_ReturnsFalse()
+        {
+            _context.Persons.RemoveRange(_context.Persons);
+            _context.SaveChanges();
+
+            bool exists = _repository.Any(out Person person);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(exists, Is.False);
+                Assert.That(person, Is.Null);
+            });
+        }
+
+        [Test]
+        public async Task Any_WithoutFilter_KeepsContextUsable()
+        {
+            _repository.Any(out Person _);
+
+            Assert.That(await _repository.CountAsync(), Is.EqualTo(5));
+        }
+
+        [Test]
         public void Any_WithProjection_OutputsList()
         {
             bool exists = _repository.Any(out List<PersonDto> persons, p => p.Age > 40, ToDto);
