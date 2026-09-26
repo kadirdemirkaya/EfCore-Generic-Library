@@ -74,23 +74,9 @@ namespace EfCore.Repository.Extensions
                   serviceLifetime
                 ));
 
-                // services.Add(new ServiceDescriptor(
-                //   typeof(IUnitOfWork<TEntity>),
-                //   sp =>
-                //   {
-                //       TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext));
-                //       return RepositoryFactory<TDbContext>.CreateUnitOfWork<TEntity>(databaseOptions, sp);
-                //   },
-                //    serviceLifetime
-                //));
-
                 services.Add(new ServiceDescriptor(
                  typeof(IUnitOfWork<TEntity>),
-                 sp =>
-                 {
-                     TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext));
-                     return RepositoryFactory<TDbContext>.CreateUnitOfWork<TEntity>(databaseOptions, sp);
-                 },
+                 sp => RepositoryFactory<TDbContext>.CreateUnitOfWork<TEntity>(databaseOptions, sp),
                   serviceLifetime
                 ));
 

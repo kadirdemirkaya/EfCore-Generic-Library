@@ -2,6 +2,7 @@ using Base.Repository.Abstractions;
 using Base.Repository.Options;
 using EfCore.Repository.Abstractions;
 using EfCore.Repository.Extensions;
+using EfCore.Repository.Factory;
 using EfCore.Repository.Unit.Test.Data;
 using EfCore.Repository.Unit.Test.Entities;
 using Microsoft.Extensions.DependencyInjection;
@@ -75,6 +76,51 @@ namespace EfCore.Repository.Unit.Test
             IUnitOfWork<Person> unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork<Person>>();
 
             Assert.That(await unitOfWork.GetReadRepository().CountAsync(), Is.EqualTo(5));
+        }
+
+        [Test]
+        public async Task OptionsRegistration_UnitOfWorkSavesChanges()
+        {
+            using TestDbContext context = _database.CreateContext();
+            ServiceCollection services = new();
+            services.EfCoreRepositoryServiceRegistration<Person, TestDbContext>(ServiceLifetime.Scoped, new DatabaseOptions { Connection = context });
+            using ServiceProvider provider = services.BuildServiceProvider();
+            using IServiceScope scope = provider.CreateScope();
+            IUnitOfWork<Person> unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork<Person>>();
+
+            await unitOfWork.GetWriteRepository().AddAsync(new Person { Name = "Margaret", Age = 88 });
+            bool saved = await unitOfWork.SaveChangesAsync();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(saved, Is.True);
+                Assert.That(unitOfWork.GetTable().Table, Is.SameAs(context));
+            });
+        }
+
+        [Test]
+        public async Task OptionsRegistration_ContextWithoutParameterlessConstructor_ResolvesUnitOfWork()
+        {
+            using OptionsOnlyDbContext context = new(_database.CreateOptions());
+            ServiceCollection services = new();
+            services.EfCoreRepositoryServiceRegistration<Person, OptionsOnlyDbContext>(ServiceLifetime.Scoped, new DatabaseOptions { Connection = context });
+            using ServiceProvider provider = services.BuildServiceProvider();
+            using IServiceScope scope = provider.CreateScope();
+
+            IUnitOfWork<Person> unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork<Person>>();
+
+            Assert.That(await unitOfWork.GetReadRepository().CountAsync(), Is.EqualTo(5));
+        }
+
+        [Test]
+        public async Task RepositoryFactory_WithOptions_UsesOptionsConnection()
+        {
+            using TestDbContext context = _database.CreateContext();
+
+            IUnitOfWork<Person> unitOfWork = RepositoryFactory<TestDbContext>.CreateUnitOfWork<Person>(new DatabaseOptions { Connection = context });
+            context.Persons.Add(new Person { Name = "Margaret" });
+
+            Assert.That(await unitOfWork.SaveChangesAsync(), Is.True);
         }
 
         [Test]
