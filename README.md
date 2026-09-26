@@ -26,7 +26,7 @@ public class PersonService(IUnitOfWork<Person> unitOfWork)
 - Unit of work per entity with access to every repository flavour
 - Specifications: conditions, includes, ordering, skip/take and no-tracking in one object
 - Pagination with `PaginatedList<T>` (total items, total pages, page index/size)
-- Raw SQL queries and commands, transactions
+- Raw SQL queries and commands, transactions with isolation level
 - Dependency injection registration per entity or by assembly scan
 - Targets .NET 6, .NET 7, .NET 8, .NET 9 and .NET 10
 
@@ -39,7 +39,14 @@ services.AddDbContext<AppDbContext>(o => o.UseNpgsql(connectionString));
 services.EfCoreRepositoryServiceRegistration<IBaseEntity, AppDbContext>(ServiceLifetime.Scoped, typeof(IBaseEntity).Assembly);
 ```
 
-Register a single entity:
+Register a single entity with a context resolved from the container. Each scope gets its own context, configured by `AddDbContext` and shared by the entity's repositories and unit of work:
+
+```csharp
+services.AddDbContext<AppDbContext>(o => o.UseSqlServer(connectionString));
+services.AddEfCoreRepository<Person, AppDbContext>();
+```
+
+Register a single entity with one context created through the parameterless constructor of `AppDbContext` (configured in `OnConfiguring`) and shared by every resolve:
 
 ```csharp
 services.EfCoreRepositoryServiceRegistration<Person, AppDbContext>(ServiceLifetime.Scoped);
@@ -113,7 +120,7 @@ await write.DeleteAsync(person);
 ## Transactions and raw SQL
 
 ```csharp
-await using var transaction = await write.BeginTransactionAsync();
+await using var transaction = await write.BeginTransactionAsync(IsolationLevel.ReadCommitted);
 await write.ExecuteCommandAsync("UPDATE Persons SET Age = Age + 1 WHERE Id = {0}", id);
 await transaction.CommitAsync();
 

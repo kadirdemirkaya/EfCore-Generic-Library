@@ -13,6 +13,36 @@ namespace EfCore.Repository.Extensions
 {
     public static class EfCoreRepositoryExtension
     {
+        /// <summary>
+        /// Registers the repositories and the unit of work of <typeparamref name="TEntity"/>.
+        /// The <typeparamref name="TDbContext"/> is resolved from the container on every resolve, so the
+        /// configuration and lifetime given to <c>AddDbContext</c> apply and each scope works on its own context.
+        /// </summary>
+        /// <typeparam name="TEntity">The entity type.</typeparam>
+        /// <typeparam name="TDbContext">The context type, registered with <c>AddDbContext</c>.</typeparam>
+        /// <param name="services">The service collection.</param>
+        /// <param name="serviceLifetime">The lifetime of the registered repositories and unit of work.</param>
+        /// <returns>The same service collection.</returns>
+        public static IServiceCollection AddEfCoreRepository<TEntity, TDbContext>(this IServiceCollection services, ServiceLifetime serviceLifetime = ServiceLifetime.Scoped)
+            where TEntity : class, new()
+            where TDbContext : DbContext
+        {
+            if (services == null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            services.Add(new ServiceDescriptor(typeof(IBaseReadRepository<TEntity>), sp => new BaseReadRepository<TEntity>(sp.GetRequiredService<TDbContext>(), sp), serviceLifetime));
+            services.Add(new ServiceDescriptor(typeof(IBaseWriteRepository<TEntity>), sp => new BaseWriteRepository<TEntity>(sp.GetRequiredService<TDbContext>(), sp), serviceLifetime));
+            services.Add(new ServiceDescriptor(typeof(IReadRepository<TEntity>), sp => new ReadRepository<TEntity>(sp.GetRequiredService<TDbContext>(), sp), serviceLifetime));
+            services.Add(new ServiceDescriptor(typeof(IWriteRepository<TEntity>), sp => new WriteRepository<TEntity>(sp.GetRequiredService<TDbContext>(), sp), serviceLifetime));
+            services.Add(new ServiceDescriptor(typeof(IDbReadRepository<TEntity>), sp => new DbReadRepository<TEntity>(sp.GetRequiredService<TDbContext>(), sp), serviceLifetime));
+            services.Add(new ServiceDescriptor(typeof(IDbWriteRepository<TEntity>), sp => new DbWriteRepository<TEntity>(sp.GetRequiredService<TDbContext>(), sp), serviceLifetime));
+            services.Add(new ServiceDescriptor(typeof(IUnitOfWork<TEntity>), sp => RepositoryFactory<TDbContext>.CreateUnitOfWork<TEntity>(sp.GetRequiredService<TDbContext>(), sp), serviceLifetime));
+
+            return services;
+        }
+
         public static IServiceCollection EfCoreRepositoryServiceRegistration<TEntity, TDbContext>(this IServiceCollection services, ServiceLifetime serviceLifetime, DatabaseOptions? databaseOptions = null)
             where TEntity : class, new()
             where TDbContext : DbContext
