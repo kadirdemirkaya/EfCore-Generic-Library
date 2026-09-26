@@ -9,8 +9,7 @@
             PageSize = pageSize;
             TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
             TotalItems = totalItems;
-            Items = new List<TEntity>(pageSize);
-            Items.AddRange(items);
+            Items = new List<TEntity>(items);
         }
 
         private PaginatedList()
