@@ -33,18 +33,22 @@ namespace EfCore.Repository.Concretes
 
         public ITable GetTable() => new Table(_dbContext);
 
-        public IBaseReadRepository<TEntity> GetBaseReadRepository() => _serviceProvider.GetRequiredService<IBaseReadRepository<TEntity>>();
+        public IBaseReadRepository<TEntity> GetBaseReadRepository() => Resolve<IBaseReadRepository<TEntity>>(() => new BaseReadRepository<TEntity>(_dbContext));
 
-        public IBaseWriteRepository<TEntity> GetBaseWriteRepository() => _serviceProvider.GetRequiredService<IBaseWriteRepository<TEntity>>();
+        public IBaseWriteRepository<TEntity> GetBaseWriteRepository() => Resolve<IBaseWriteRepository<TEntity>>(() => new BaseWriteRepository<TEntity>(_dbContext));
 
-        public IDbReadRepository<TEntity> GetDbReadRepository() => _serviceProvider.GetRequiredService<IDbReadRepository<TEntity>>();
+        public IDbReadRepository<TEntity> GetDbReadRepository() => Resolve<IDbReadRepository<TEntity>>(() => new DbReadRepository<TEntity>(_dbContext));
 
-        public IDbWriteRepository<TEntity> GetDbWriteRepository() => _serviceProvider.GetRequiredService<IDbWriteRepository<TEntity>>();
+        public IDbWriteRepository<TEntity> GetDbWriteRepository() => Resolve<IDbWriteRepository<TEntity>>(() => new DbWriteRepository<TEntity>(_dbContext));
 
-        public IReadRepository<TEntity> GetReadRepository() => _serviceProvider.GetRequiredService<IReadRepository<TEntity>>();
+        public IReadRepository<TEntity> GetReadRepository() => Resolve<IReadRepository<TEntity>>(() => new ReadRepository<TEntity>(_dbContext));
 
-        public IWriteRepository<TEntity> GetWriteRepository() => _serviceProvider.GetRequiredService<IWriteRepository<TEntity>>();
+        public IWriteRepository<TEntity> GetWriteRepository() => Resolve<IWriteRepository<TEntity>>(() => new WriteRepository<TEntity>(_dbContext));
 
         public async Task<bool> SaveChangesAsync() => await _dbContext.SaveChangesAsync().ConfigureAwait(false) > 0;
+
+        private TRepository Resolve<TRepository>(Func<TRepository> createOnContext)
+            where TRepository : notnull
+            => _serviceProvider is null ? createOnContext() : _serviceProvider.GetRequiredService<TRepository>();
     }
 }

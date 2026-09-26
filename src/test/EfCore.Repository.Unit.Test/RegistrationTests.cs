@@ -152,6 +152,38 @@ namespace EfCore.Repository.Unit.Test
         }
 
         [Test]
+        public async Task RepositoryFactory_WithoutServiceProvider_CreatesRepositoriesOnItsContext()
+        {
+            using TestDbContext context = _database.CreateContext();
+
+            IUnitOfWork<Person> unitOfWork = RepositoryFactory<TestDbContext>.CreateUnitOfWork<Person>(context);
+            await unitOfWork.GetWriteRepository().AddAsync(new Person { Name = "Margaret", Age = 88 });
+            bool saved = await unitOfWork.SaveChangesAsync();
+
+            Assert.Multiple(async () =>
+            {
+                Assert.That(saved, Is.True);
+                Assert.That(await unitOfWork.GetReadRepository().CountAsync(), Is.EqualTo(6));
+                Assert.That(await unitOfWork.GetDbReadRepository().CountAsync(), Is.EqualTo(6));
+                Assert.That(await unitOfWork.GetBaseReadRepository().CountAsync(), Is.EqualTo(6));
+                Assert.That(unitOfWork.GetWriteRepository().Table, Is.SameAs(context));
+                Assert.That(unitOfWork.GetDbWriteRepository().Table, Is.SameAs(context));
+                Assert.That(unitOfWork.GetBaseWriteRepository().Table, Is.SameAs(context));
+            });
+        }
+
+        [Test]
+        public void RepositoryFactory_WithProviderMissingRegistrations_StillThrows()
+        {
+            using TestDbContext context = _database.CreateContext();
+            using ServiceProvider provider = new ServiceCollection().BuildServiceProvider();
+
+            IUnitOfWork<Person> unitOfWork = RepositoryFactory<TestDbContext>.CreateUnitOfWork<Person>(context, provider);
+
+            Assert.Throws<InvalidOperationException>(() => unitOfWork.GetReadRepository());
+        }
+
+        [Test]
         public async Task AssemblyRegistration_ResolvesRepositoriesForEveryEntity()
         {
             ServiceCollection services = new();
