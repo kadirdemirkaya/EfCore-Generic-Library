@@ -65,36 +65,12 @@ namespace EfCore.Repository.Concretes
         #region Any
 
         /// <summary>
-        /// then will update  !!!
+        /// Determines whether the set contains any entity and outputs the first one.
         /// </summary>
-        /// <param name="entity"></param>
-        /// <returns></returns>
+        /// <param name="entity">The first entity, or <c>null</c> when the set is empty.</param>
+        /// <returns><c>true</c> when at least one entity exists.</returns>
         public bool Any(out TEntity entity)
-        {
-            entity = null;
-
-            using (var context = _dbContext)
-            {
-                var dbContext = context.Set<TEntity>();
-                var idProperty = typeof(TEntity).GetProperty("Id");
-
-                if (idProperty != null)
-                {
-                    var entityModel = new TEntity();
-                    idProperty.SetValue(entityModel, 1);
-
-                    bool exists = dbContext.Any(e => EF.Property<int>(e, "Id") == EF.Property<int>(entityModel, "Id"));
-
-                    if (exists)
-                    {
-                        entity = dbContext.FirstOrDefault(e => EF.Property<int>(e, "Id") == EF.Property<int>(entityModel, "Id"));
-                    }
-
-                    return exists;
-                }
-                return false;
-            }
-        }
+            => Any(out entity, null, false);
 
         public bool Any(out TEntity entity, Expression<Func<TEntity, bool>> filter, bool asNoTracking = false)
         {
