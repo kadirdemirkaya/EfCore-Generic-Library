@@ -7,13 +7,13 @@
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Authors>Kadir Demirkaya</Authors>
 		<PackageId>EfCore.BaseRepositoryPack</PackageId>
-		<Version>1.1.2</Version>
+		<Version>1.2.0</Version>
 		<Description>Provides base abstractions and helpers for the EfCore.RepositoryPack library, including options, interfaces, and shared logic.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageTags>EfCore.RepositoryPack</PackageTags>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageReleaseNotes>Includes core abstractions and configuration options for repository implementations.</PackageReleaseNotes>
-		<AssemblyInformationalVersion>1.1.2</AssemblyInformationalVersion>
+		<PackageReleaseNotes>Adds .NET 9 and .NET 10 targets. Raises EF Core and Microsoft.Extensions dependency floors on .NET 6 and .NET 8 to versions without known security advisories.</PackageReleaseNotes>
+		<AssemblyInformationalVersion>1.2.0</AssemblyInformationalVersion>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 	</PropertyGroup>
 
