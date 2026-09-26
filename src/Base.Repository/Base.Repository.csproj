@@ -10,11 +10,18 @@
 		<Version>1.2.0</Version>
 		<Description>Provides base abstractions and helpers for the EfCore.RepositoryPack library, including options, interfaces, and shared logic.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/kadirdemirkaya/EfCore-Generic-Library</RepositoryUrl>
 		<PackageTags>EfCore.RepositoryPack</PackageTags>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageReleaseNotes>Adds .NET 9 and .NET 10 targets. Raises EF Core and Microsoft.Extensions dependency floors on .NET 6 and .NET 8 to versions without known security advisories.</PackageReleaseNotes>
 		<AssemblyInformationalVersion>1.2.0</AssemblyInformationalVersion>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+		<PackageProjectUrl>https://github.com/kadirdemirkaya/EfCore-Generic-Library</PackageProjectUrl>
+		<RepositoryType>git</RepositoryType>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 	</PropertyGroup>
 
 	<ItemGroup>
