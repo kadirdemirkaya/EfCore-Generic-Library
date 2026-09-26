@@ -28,8 +28,6 @@ namespace EfCore.Test
         {
             _services = new ServiceCollection();
 
-            //_services.AddAutoMapper(AssemblyReference.Assembly);
-
             InjectExtension(_services, ServiceLifetime.Scoped);
         }
 

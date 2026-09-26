@@ -23,7 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="EfCore.BaseRepositoryPack" Version="1.1.2" />
+		<ProjectReference Include="..\Base.Repository\Base.Repository.csproj" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
