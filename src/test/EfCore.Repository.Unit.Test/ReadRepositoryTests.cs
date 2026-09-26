@@ -259,6 +259,55 @@ namespace EfCore.Repository.Unit.Test
         }
 
         [Test]
+        public void Any_WithPaginationAndProjection_OutputsPage()
+        {
+            PaginationSpecification<Person> specification = new() { PageIndex = 2, PageSize = 2 };
+            specification.OrderBy = q => q.OrderBy(p => p.Age);
+
+            bool exists = _repository.Any(out PaginatedList<PersonDto> page, specification, ToDto);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(exists, Is.True);
+                Assert.That(page.TotalItems, Is.EqualTo(5));
+                Assert.That(page.Items.Select(p => p.Name), Is.EqualTo(new[] { "Alan", "Barbara" }));
+            });
+        }
+
+        [Test]
+        public void Any_WithPaginationAndProjection_ExecutesSynchronously()
+        {
+            CommandCounter counter = new();
+            using TestDbContext context = _database.CreateContext(counter);
+            ReadRepository<Person> repository = new(context);
+            PaginationSpecification<Person> specification = new() { PageIndex = 1, PageSize = 2 };
+
+            repository.Any(out PaginatedList<PersonDto> _, specification, ToDto);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(counter.Asynchronous, Is.EqualTo(0));
+                Assert.That(counter.Synchronous, Is.EqualTo(2));
+            });
+        }
+
+        [Test]
+        public void Any_WithPaginationAndProjection_InvalidPage_Throws()
+        {
+            PaginationSpecification<Person> specification = new() { PageIndex = 0, PageSize = 2 };
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => _repository.Any(out PaginatedList<PersonDto> _, specification, ToDto));
+        }
+
+        [Test]
+        public void Any_WithPaginationAndProjection_CanceledToken_Throws()
+        {
+            PaginationSpecification<Person> specification = new() { PageIndex = 1, PageSize = 2 };
+
+            Assert.Throws<TaskCanceledException>(() => _repository.Any(out PaginatedList<PersonDto> _, specification, ToDto, new CancellationToken(true)));
+        }
+
+        [Test]
         public async Task GetQueryable_IsComposable()
         {
             List<string> names = await _repository.GetQueryable().Where(p => p.Age < 30).Select(p => p.Name).ToListAsync();

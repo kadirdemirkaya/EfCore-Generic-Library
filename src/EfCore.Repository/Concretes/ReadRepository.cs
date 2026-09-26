@@ -215,10 +215,15 @@ namespace EfCore.Repository.Concretes
                 throw new ArgumentNullException(nameof(mapFilter));
             }
 
+            if (cancellationToken.IsCancellationRequested)
+            {
+                throw new TaskCanceledException(null, null, cancellationToken);
+            }
+
             IQueryable<TEntity> query = _dbContext.Set<TEntity>().GetSpecifiedQuery((SpecificationBase<TEntity>)specification);
 
             paginatedList = query.Select(mapFilter)
-                .ToPaginatedListAsync(specification.PageIndex, specification.PageSize, cancellationToken).GetAwaiter().GetResult();
+                .ToPaginatedList(specification.PageIndex, specification.PageSize);
 
             return paginatedList is not null ? true : false;
         }

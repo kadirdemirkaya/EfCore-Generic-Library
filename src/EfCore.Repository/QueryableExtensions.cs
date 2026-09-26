@@ -12,6 +12,31 @@ namespace EfCore.Repository
             CancellationToken cancellationToken = default)
             where TEntity : class
         {
+            ValidatePage(entities, pageIndex, pageSize);
+
+            long count = await entities.LongCountAsync(cancellationToken);
+
+            int skip = (pageIndex - 1) * pageSize;
+
+            List<TEntity> items = await entities.Skip(skip).Take(pageSize).ToListAsync(cancellationToken);
+
+            return new PaginatedList<TEntity>(items, count, pageIndex, pageSize);
+        }
+
+        internal static PaginatedList<TEntity> ToPaginatedList<TEntity>(this IQueryable<TEntity> entities, int pageIndex, int pageSize)
+            where TEntity : class
+        {
+            ValidatePage(entities, pageIndex, pageSize);
+
+            long count = entities.LongCount();
+
+            List<TEntity> items = entities.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+
+            return new PaginatedList<TEntity>(items, count, pageIndex, pageSize);
+        }
+
+        private static void ValidatePage<TEntity>(IQueryable<TEntity> entities, int pageIndex, int pageSize)
+        {
             if (entities == null)
             {
                 throw new ArgumentNullException(nameof(entities));
@@ -26,14 +51,6 @@ namespace EfCore.Repository
             {
                 throw new ArgumentOutOfRangeException(nameof(pageSize), "The value of pageSize must be greater than 0.");
             }
-
-            long count = await entities.LongCountAsync(cancellationToken);
-
-            int skip = (pageIndex - 1) * pageSize;
-
-            List<TEntity> items = await entities.Skip(skip).Take(pageSize).ToListAsync(cancellationToken);
-
-            return new PaginatedList<TEntity>(items, count, pageIndex, pageSize);
         }
 
         public static async Task<PaginatedList<TEntity>> ToPaginatedListAsync<TEntity>(
