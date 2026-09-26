@@ -6,15 +6,15 @@
 		<Nullable>enable</Nullable>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>EfCore.RepositoryPack</PackageId>
-		<Version>1.2.0</Version>
+		<Version>1.3.0</Version>
 		<Authors>Kadir Demirkaya</Authors>
 		<Description>Provides a generic repository pattern implementation for Entity Framework Core, supporting all SQL-based databases.</Description>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<RepositoryUrl>https://github.com/kadirdemirkaya/EfCore-Generic-Library</RepositoryUrl>
 		<PackageTags>efcore;repository;entityframework;sql;database;dataaccess</PackageTags>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageReleaseNotes>Adds .NET 9 and .NET 10 targets and AddEfCoreRepository for per-scope DbContext registration. Fixes: BeginTransactionAsync honours the isolation level; Any(out entity) no longer fails or disposes the context; the DatabaseOptions unit of work saves changes; updates of entities with string keys; assembly-scan registration registers IBaseReadRepository and skips abstract types. Raises dependency floors to versions without known security advisories.</PackageReleaseNotes>
-		<AssemblyInformationalVersion>1.2.0</AssemblyInformationalVersion>
+		<PackageReleaseNotes>Adds composite primary key lookup through GetByIdAsync(new object[] { ... }). Fixes: the paginated Any overload no longer blocks on async code; a unit of work created without a service provider builds its repositories on its own context. Filtered Any lookups use a single query.</PackageReleaseNotes>
+		<AssemblyInformationalVersion>1.3.0</AssemblyInformationalVersion>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 	</PropertyGroup>
 
