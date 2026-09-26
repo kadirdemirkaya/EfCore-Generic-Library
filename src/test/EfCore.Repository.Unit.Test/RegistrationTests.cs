@@ -124,6 +124,34 @@ namespace EfCore.Repository.Unit.Test
         }
 
         [Test]
+        public async Task AssemblyRegistration_ResolvesBaseReadRepository()
+        {
+            ServiceCollection services = new();
+            services.AddDbContext<TestDbContext>(_database.ConfigureContext);
+            services.EfCoreRepositoryServiceRegistration<ITestEntity, TestDbContext>(ServiceLifetime.Scoped, typeof(ITestEntity).Assembly);
+            using ServiceProvider provider = services.BuildServiceProvider();
+            using IServiceScope scope = provider.CreateScope();
+
+            IUnitOfWork<Person> unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork<Person>>();
+
+            Assert.That(await unitOfWork.GetBaseReadRepository().CountAsync(), Is.EqualTo(5));
+        }
+
+        [Test]
+        public void AssemblyRegistration_SkipsAbstractTypesAndRegistersFactoryOnce()
+        {
+            ServiceCollection services = new();
+
+            services.EfCoreRepositoryServiceRegistration<ITestEntity, TestDbContext>(ServiceLifetime.Scoped, typeof(ITestEntity).Assembly);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(services.Any(d => d.ServiceType == typeof(IReadRepository<AuditedEntity>)), Is.False);
+                Assert.That(services.Count(d => d.ServiceType == typeof(RepositoryNoneStaticFactory<>)), Is.EqualTo(1));
+            });
+        }
+
+        [Test]
         public async Task AssemblyRegistration_ResolvesRepositoriesForEveryEntity()
         {
             ServiceCollection services = new();
