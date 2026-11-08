@@ -216,7 +216,7 @@ namespace EfCore.Repository.Concretes
                 throw new TaskCanceledException(null, null, cancellationToken);
             }
 
-            IQueryable<TEntity> query = _dbContext.Set<TEntity>().GetSpecifiedQuery((SpecificationBase<TEntity>)specification);
+            IQueryable<TEntity> query = OrderByPrimaryKeyWhenUnordered(_dbContext.Set<TEntity>().GetSpecifiedQuery((SpecificationBase<TEntity>)specification), specification);
 
             paginatedList = query.Select(mapFilter)
                 .ToPaginatedList(specification.PageIndex, specification.PageSize);
@@ -509,7 +509,7 @@ namespace EfCore.Repository.Concretes
             if (specification == null)
                 throw new ArgumentNullException(nameof(specification));
 
-            return await _dbContext.Set<TEntity>().ToPaginatedListAsync(specification, cancellationToken);
+            return await OrderByPrimaryKeyWhenUnordered(_dbContext.Set<TEntity>(), specification).ToPaginatedListAsync(specification, cancellationToken);
         }
 
         public async Task<PaginatedList<MapType>> GetListAsync<MapType>(PaginationSpecification<TEntity> specification, Expression<Func<TEntity, MapType>> mapFilter, CancellationToken cancellationToken = default) where MapType : class
@@ -520,10 +520,41 @@ namespace EfCore.Repository.Concretes
             if (mapFilter == null)
                 throw new ArgumentNullException(nameof(mapFilter));
 
-            IQueryable<TEntity> query = _dbContext.Set<TEntity>().GetSpecifiedQuery((SpecificationBase<TEntity>)specification);
+            IQueryable<TEntity> query = OrderByPrimaryKeyWhenUnordered(_dbContext.Set<TEntity>().GetSpecifiedQuery((SpecificationBase<TEntity>)specification), specification);
 
             return await query.Select(mapFilter)
                 .ToPaginatedListAsync(specification.PageIndex, specification.PageSize, cancellationToken);
+        }
+
+        private IQueryable<TEntity> OrderByPrimaryKeyWhenUnordered(IQueryable<TEntity> query, SpecificationBase<TEntity> specification)
+        {
+            if (specification.OrderBy != null)
+                return query;
+
+            IReadOnlyList<IProperty>? keyProperties = _dbContext.Model.FindEntityType(typeof(TEntity))?.FindPrimaryKey()?.Properties;
+
+            if (keyProperties == null || keyProperties.Count == 0)
+                return query;
+
+            ParameterExpression pe = Expression.Parameter(typeof(TEntity), "entity");
+
+            for (int i = 0; i < keyProperties.Count; i++)
+            {
+                IProperty keyProperty = keyProperties[i];
+
+                LambdaExpression keySelector = Expression.Lambda(
+                    Expression.Call(typeof(EF), nameof(EF.Property), new[] { keyProperty.ClrType }, pe, Expression.Constant(keyProperty.Name)),
+                    pe);
+
+                query = query.Provider.CreateQuery<TEntity>(Expression.Call(
+                    typeof(Queryable),
+                    i == 0 ? nameof(Queryable.OrderBy) : nameof(Queryable.ThenBy),
+                    new[] { typeof(TEntity), keyProperty.ClrType },
+                    query.Expression,
+                    Expression.Quote(keySelector)));
+            }
+
+            return query;
         }
         #endregion
     }

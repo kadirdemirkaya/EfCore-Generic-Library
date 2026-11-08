@@ -126,13 +126,19 @@ namespace EfCore.Repository.Concretes
                 throw new ArgumentNullException(nameof(entities));
             }
 
-            var primaryKeyValues = new List<object[]>();
+            if (entities.Any(entity => entity == null))
+            {
+                throw new ArgumentNullException(nameof(entities), "The list cannot contain null entities.");
+            }
+
+            await _dbContext.Set<TEntity>().AddRangeAsync(entities, cancellationToken).ConfigureAwait(false);
+            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+            var primaryKeyValues = new List<object[]>(entities.Count);
 
             foreach (var entity in entities)
             {
-                EntityEntry<TEntity> entityEntry = await _dbContext.Set<TEntity>().AddAsync(entity, cancellationToken).ConfigureAwait(false);
-
-                await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                EntityEntry<TEntity> entityEntry = _dbContext.Entry(entity);
                 primaryKeyValues.Add(entityEntry.Metadata.FindPrimaryKey().Properties.
                     Select(p => entityEntry.Property(p.Name).CurrentValue).ToArray());
             }

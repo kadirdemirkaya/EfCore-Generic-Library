@@ -96,17 +96,24 @@ namespace EfCore.Repository.Concretes
                     throw new InvalidOperationException($"{typeof(TEntity).Name} is not part of EF Core DbContext model");
                 }
 
-                string primaryKeyName = entityType.FindPrimaryKey().Properties.Select(p => p.Name).FirstOrDefault();
+                IReadOnlyList<IProperty>? keyProperties = entityType.FindPrimaryKey()?.Properties;
 
-                if (primaryKeyName != null)
+                if (keyProperties != null && keyProperties.Count != 0)
                 {
-                    Type primaryKeyType = entityType.FindPrimaryKey().Properties.Select(p => p.ClrType).FirstOrDefault();
+                    bool anyKeyPartNull = false;
+                    bool allKeyPartsDefault = true;
 
-                    object primaryKeyDefaultValue = primaryKeyType.IsValueType ? Activator.CreateInstance(primaryKeyType) : null;
+                    foreach (IProperty keyProperty in keyProperties)
+                    {
+                        object? keyDefaultValue = keyProperty.ClrType.IsValueType ? Activator.CreateInstance(keyProperty.ClrType) : null;
 
-                    object primaryValue = entity.GetType().GetProperty(primaryKeyName).GetValue(entity, null);
+                        object? keyValue = entity.GetType().GetProperty(keyProperty.Name)?.GetValue(entity, null);
 
-                    if (Equals(primaryKeyDefaultValue, primaryValue))
+                        anyKeyPartNull |= keyValue == null;
+                        allKeyPartsDefault &= Equals(keyDefaultValue, keyValue);
+                    }
+
+                    if (anyKeyPartNull || allKeyPartsDefault)
                     {
                         throw new InvalidOperationException("The primary key value of the entity to be updated is not valid.");
                     }

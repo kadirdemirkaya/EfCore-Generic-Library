@@ -104,7 +104,9 @@ PaginatedList<Person> result = await read.GetListAsync(page);
 // result.Items, result.TotalItems, result.TotalPages, result.PageIndex, result.PageSize
 ```
 
-Any `IQueryable<T>` can be paged directly with `ToPaginatedListAsync(pageIndex, pageSize)`.
+When a `PaginationSpecification` has no `OrderBy`, the repository orders the page by primary key (every key part for composite keys), so pages are stable; an `OrderBy` you set is used as given.
+
+Any `IQueryable<T>` can be paged directly with `ToPaginatedListAsync(pageIndex, pageSize)`; it keeps the order of the query, so order it before paging.
 
 ## Writing
 
