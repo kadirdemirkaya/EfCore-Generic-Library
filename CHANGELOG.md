@@ -1,18 +1,36 @@
 # Changelog
 
-The repository ships two packages with independent versions: `EfCore.RepositoryPack` (`src/EfCore.Repository`)
-and `EfCore.BaseRepositoryPack` (`src/Base.Repository`). The release number and the NuGet publish are chosen by
-the repository owner.
+The repository ships two packages: `EfCore.RepositoryPack` (`src/EfCore.Repository`) and `EfCore.BaseRepositoryPack`
+(`src/Base.Repository`). Up to 1.3.0 they were versioned independently; from 2.0.0 on both packages always share one
+version number. The release number and the NuGet publish are chosen by the repository owner.
 
-## Unreleased
+## 2.0.0 - 2026-11-08 (both packages)
 
-- Added `LICENSE.txt` and this changelog.
-- Fix: entities registered one by one with `EfCoreRepositoryServiceRegistration<TEntity, TDbContext>(lifetime)` now share one context per `TDbContext`, so a unit of work saves changes made through another entity's repositories.
-- Fix: the assembly-scan registration no longer registers the marker type as a service, so resolving it no longer throws and an existing registration of the marker type is kept.
-- Fix: `InsertAsync(List<TEntity>)` adds the whole list and saves it with a single `SaveChanges`, so the insert is all-or-nothing instead of leaving earlier entities saved when a later one fails; a list containing `null` throws `ArgumentNullException` before anything is saved. The returned keys keep the input order.
-- Fix: `UpdateAsync` checks every part of a composite primary key, so an entity whose first key part holds its default value (for example `OrderId = 0`) can be updated; it still throws when every key part is default or any key part is `null`.
-- Fix: paginated repository reads (`GetListAsync(PaginationSpecification)`, its projection overload and the paginated `Any`) order by primary key when the specification has no `OrderBy`, so pages no longer overlap or skip rows; a caller-supplied `OrderBy` is left unchanged.
-- Nullable annotations (both packages, no runtime behaviour change): `GetByIdAsync` and `GetAsync` return `Task<TEntity?>` / `Task<MapType?>` because they yield `null` when nothing matches; `Any(out TEntity?)` and `Any(out List<TEntity>?, ...)` carry `[NotNullWhen(true)]`; `SpecificationBase.Includes` / `OrderBy` and the repositories' and unit of work's `_serviceProvider` / `_databaseOptions` are nullable. Projects with nullable reference types enabled may see new warnings where these results are used without a null check.
+Everything since `EfCore.RepositoryPack` 1.3.0 / `EfCore.BaseRepositoryPack` 1.2.0, released as one major version.
+
+### Breaking changes
+
+- **Target frameworks:** both packages target `net8.0`, `net9.0` and `net10.0`; `net6.0` and `net7.0` are dropped. Migration: move the application to .NET 8 or later, or stay on 1.x.
+- **Dependencies:** each target framework references the current patched EF Core and Microsoft.Extensions versions (`8.0.33`, `9.0.22`, `10.0.14`; Microsoft.Extensions on `net8.0`: Configuration.Abstractions `8.0.0`, Configuration.Binder `8.0.2`, DependencyInjection `8.0.1`, DependencyInjection.Abstractions `8.0.2`, Options `8.0.2`). Applications referencing lower EF Core patch versions are lifted to these.
+- **Raw SQL:** `IBaseReadRepository<TEntity>.ExecuteQueryAsync(string query)` and its implementation on `BaseReadRepository<TEntity>` (and so on `ReadRepository` / `DbReadRepository`) are removed: the unparameterized string overload invited SQL built from user input. Migration: `ExecuteQueryInterpolatedAsync($"... {value}")` (new, values are sent as database parameters) or `ExecuteQueryAsync(sql, parameters)` with `{0}`-style placeholders. `ExecuteQueryAsync(string, params object[])` is unchanged, so an existing `ExecuteQueryAsync(sql)` call still compiles against it after recompiling: review every such call and never interpolate values into its `sql` string. Custom implementations of `IBaseReadRepository<TEntity>` must implement `ExecuteQueryInterpolatedAsync`.
+- **Context members:** the public `_dbContext` property of `BaseReadRepository<TEntity>`, `BaseWriteRepository<TEntity>`, `ReadRepository<TEntity>` (`new`), `WriteRepository<TEntity>` (`new`), `Table` and `UnitOfWork<TEntity>` is removed (now a private field). Migration: the repositories' public `Table` property (`ITable.Table`) returns the same context; for a unit of work use `unitOfWork.GetTable().Table`; for `Table` use `((ITable)table).Table`.
+- **`DatabaseOptions`:** `RetryCount` and `IsRetry` are removed; no code ever read them. Migration: delete the assignments (configure retries on the provider, for example in `AddDbContext`).
+- **`ParameterValidationAttribute`** (`EfCore.Repository.Attributes`) is removed; nothing in the packages used it. Migration: delete the usages.
+- **`ConfigurationHelpers.GetOptions<TModel>(IServiceCollection, string)`** is removed: it built an intermediate service provider from the collection during registration. Migration: `configuration.GetOptions<TModel>(section)` on the `IConfiguration` (for example `builder.Configuration`), which is unchanged.
+- **Nullable annotations:** `GetByIdAsync` and `GetAsync` return `Task<TEntity?>` / `Task<MapType?>`; `Any(out TEntity?)` and `Any(out List<TEntity>?, ...)` carry `[NotNullWhen(true)]`; `SpecificationBase.Includes` / `OrderBy` and the repositories' and unit of work's `_serviceProvider` / `_databaseOptions` are nullable. No runtime change; projects with nullable reference types enabled may see new warnings where these results are used without a null check.
+
+### Added
+
+- `ExecuteQueryInterpolatedAsync(FormattableString query, CancellationToken cancellationToken = default)` on `IBaseReadRepository<TEntity>` and every read repository: runs an interpolated SQL query and sends each interpolated value as a database parameter.
+- `LICENSE.txt` and this changelog.
+
+### Fixed
+
+- Entities registered one by one with `EfCoreRepositoryServiceRegistration<TEntity, TDbContext>(lifetime)` now share one context per `TDbContext`, so a unit of work saves changes made through another entity's repositories.
+- The assembly-scan registration no longer registers the marker type as a service, so resolving it no longer throws and an existing registration of the marker type is kept.
+- `InsertAsync(List<TEntity>)` adds the whole list and saves it with a single `SaveChanges`, so the insert is all-or-nothing instead of leaving earlier entities saved when a later one fails; a list containing `null` throws `ArgumentNullException` before anything is saved. The returned keys keep the input order.
+- `UpdateAsync` checks every part of a composite primary key, so an entity whose first key part holds its default value (for example `OrderId = 0`) can be updated; it still throws when every key part is default or any key part is `null`.
+- Paginated repository reads (`GetListAsync(PaginationSpecification)`, its projection overload and the paginated `Any`) order by primary key when the specification has no `OrderBy`, so pages no longer overlap or skip rows; a caller-supplied `OrderBy` is left unchanged.
 
 ## EfCore.RepositoryPack 1.3.0 - 2026-09-27
 

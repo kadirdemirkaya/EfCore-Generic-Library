@@ -1,12 +1,18 @@
 ﻿namespace Base.Repository.Options
 {
+    /// <summary>
+    /// Supplies the context used by the <see cref="DatabaseOptions"/>-based repository registrations.
+    /// </summary>
     public class DatabaseOptions
     {
-        public int RetryCount { get; set; } = 5;
-        public bool IsRetry { get; set; } = true;
-
+        /// <summary>
+        /// A connection string kept for the application's own use; the repositories do not read it.
+        /// </summary>
         public string? ConnectionUrl { get; set; }
-        public object? Connection { get; set; }
 
+        /// <summary>
+        /// The <c>DbContext</c> instance the repositories and the unit of work operate on.
+        /// </summary>
+        public object? Connection { get; set; }
     }
 }

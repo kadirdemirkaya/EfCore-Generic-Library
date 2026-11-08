@@ -9,7 +9,7 @@ namespace EfCore.Repository.Concretes
     public sealed class UnitOfWork<TEntity> : IUnitOfWork<TEntity>
         where TEntity : class, new()
     {
-        public DbContext _dbContext { get; private set; }
+        private readonly DbContext _dbContext;
         public IServiceProvider? _serviceProvider { get; private set; }
         public DatabaseOptions? _databaseOptions { get; private set; }
 

@@ -11,7 +11,7 @@ namespace EfCore.Repository.Concretes
     public class BaseWriteRepository<TEntity> : IBaseWriteRepository<TEntity>
         where TEntity : class, new()
     {
-        public DbContext _dbContext { get; set; }
+        private readonly DbContext _dbContext;
         public IServiceProvider? _serviceProvider { get; set; }
         public DatabaseOptions? _databaseOptions { get; set; }
 

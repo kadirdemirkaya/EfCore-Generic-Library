@@ -73,11 +73,9 @@ namespace EfCore.Repository.Unit.Test
                 Assert.That(read.Table, Is.SameAs(context));
                 Assert.That(((Concretes.BaseReadRepository<Person>)read).Table, Is.SameAs(context));
                 Assert.That(((Base.Repository.Abstractions.ITable)read).Table, Is.SameAs(context));
-                Assert.That(read._dbContext, Is.SameAs(((Concretes.BaseReadRepository<Person>)read)._dbContext));
                 Assert.That(write.Table, Is.SameAs(context));
                 Assert.That(((Concretes.BaseWriteRepository<Person>)write).Table, Is.SameAs(context));
                 Assert.That(((Base.Repository.Abstractions.ITable)write).Table, Is.SameAs(context));
-                Assert.That(write._dbContext, Is.SameAs(((Concretes.BaseWriteRepository<Person>)write)._dbContext));
             });
         }
 

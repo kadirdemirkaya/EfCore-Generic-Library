@@ -16,7 +16,7 @@ namespace EfCore.Repository.Concretes
     public class BaseReadRepository<TEntity> : IBaseReadRepository<TEntity>
         where TEntity : class, new()
     {
-        public DbContext _dbContext { get; set; }
+        private readonly DbContext _dbContext;
         public IServiceProvider? _serviceProvider { get; set; }
         public DatabaseOptions? _databaseOptions { get; set; }
 
@@ -62,11 +62,18 @@ namespace EfCore.Repository.Concretes
             }
         }
 
-        public async Task<List<TEntity>> ExecuteQueryAsync(string query)
-            => await _dbContext.Set<TEntity>().FromSqlRaw(query).ToListAsync().ConfigureAwait(false);
-
+        /// <inheritdoc />
         public async Task<List<TEntity>> ExecuteQueryAsync(string query, params object[] parameters)
             => await _dbContext.Set<TEntity>().FromSqlRaw(query, parameters).ToListAsync().ConfigureAwait(false);
+
+        /// <inheritdoc />
+        public async Task<List<TEntity>> ExecuteQueryInterpolatedAsync(FormattableString query, CancellationToken cancellationToken = default)
+        {
+            if (query == null)
+                throw new ArgumentNullException(nameof(query));
+
+            return await _dbContext.Set<TEntity>().FromSqlInterpolated(query).ToListAsync(cancellationToken).ConfigureAwait(false);
+        }
 
         public IQueryable<TEntity> GetQueryable()
           => _dbContext.Set<TEntity>();

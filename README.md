@@ -27,9 +27,9 @@ public class PersonService(IUnitOfWork<Person> unitOfWork)
 - Unit of work per entity with access to every repository flavour
 - Specifications: conditions, includes, ordering, skip/take and no-tracking in one object
 - Pagination with `PaginatedList<T>` (total items, total pages, page index/size)
-- Raw SQL queries and commands, transactions with isolation level
+- Raw SQL queries with parameters (interpolated or placeholder style) and commands, transactions with isolation level
 - Dependency injection registration per entity or by assembly scan
-- Targets .NET 6, .NET 7, .NET 8, .NET 9 and .NET 10
+- Targets .NET 8, .NET 9 and .NET 10
 
 ## Registration
 
@@ -128,15 +128,30 @@ await using var transaction = await write.BeginTransactionAsync(IsolationLevel.R
 await write.ExecuteCommandAsync("UPDATE Persons SET Age = Age + 1 WHERE Id = {0}", id);
 await transaction.CommitAsync();
 
-List<Person> rows = await read.ExecuteQueryAsync("SELECT * FROM Persons WHERE Age > {0}", 30);
+List<Person> rows = await read.ExecuteQueryInterpolatedAsync($"SELECT * FROM Persons WHERE Age > {minimumAge}");
+List<Person> same = await read.ExecuteQueryAsync("SELECT * FROM Persons WHERE Age > {0}", minimumAge);
 ```
+
+`ExecuteQueryInterpolatedAsync` sends every interpolated value as a database parameter. With `ExecuteQueryAsync`, pass values through the `{0}`, `{1}`, ... placeholders and the parameter array; never concatenate or interpolate user input into its SQL text.
 
 ## Packages
 
-| Package | Purpose |
-|---|---|
-| [EfCore.RepositoryPack](https://www.nuget.org/packages/EfCore.RepositoryPack) | Repositories, unit of work, specifications, registration |
-| [EfCore.BaseRepositoryPack](https://www.nuget.org/packages/EfCore.BaseRepositoryPack) | Base abstractions and options, installed automatically |
+Both packages share one version number.
+
+| Package | Version | Purpose |
+|---|---|---|
+| [EfCore.RepositoryPack](https://www.nuget.org/packages/EfCore.RepositoryPack) | 2.0.0 | Repositories, unit of work, specifications, registration |
+| [EfCore.BaseRepositoryPack](https://www.nuget.org/packages/EfCore.BaseRepositoryPack) | 2.0.0 | Base abstractions and options, installed automatically |
+
+## Upgrading from 1.x
+
+2.0.0 targets .NET 8, .NET 9 and .NET 10 and removes a few members:
+
+- `ExecuteQueryAsync(string)` without parameters → `ExecuteQueryInterpolatedAsync($"...")` or `ExecuteQueryAsync(sql, parameters)`
+- the public `_dbContext` members of the repositories, `Table` and `UnitOfWork` → the repository's `Table` property, or `unitOfWork.GetTable().Table`
+- `DatabaseOptions.RetryCount` / `IsRetry`, `ParameterValidationAttribute` and `ConfigurationHelpers.GetOptions(IServiceCollection, string)` → removed; use `configuration.GetOptions<T>(section)`
+
+The full list is in the [changelog](https://github.com/kadirdemirkaya/EfCore-Generic-Library/blob/main/CHANGELOG.md).
 
 ## License
 
