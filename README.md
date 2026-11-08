@@ -27,6 +27,7 @@ public class PersonService(IUnitOfWork<Person> unitOfWork)
 - Unit of work per entity with access to every repository flavour
 - Entity-independent unit of work: repositories of several entities on one context, one save or one transaction (retry-strategy aware)
 - Updates without an immediate save (`Update`), written together with other changes by one `SaveChangesAsync`
+- Set-based updates and deletes by filter or specification (`UpdateWhereAsync`, `DeleteWhereAsync`) in one SQL command
 - Specifications: conditions, includes, ordering, skip/take and no-tracking in one object
 - Pagination with `PaginatedList<T>` (total items, total pages, page index/size)
 - Raw SQL queries with parameters (interpolated or placeholder style) and commands, transactions with isolation level
@@ -130,6 +131,26 @@ write.Update(person);
 write.Update(otherPeople);
 await write.SaveChangesAsync();
 ```
+
+### Set-based updates and deletes
+
+`DeleteWhereAsync` and `UpdateWhereAsync` change every matching row with one SQL command, without loading the entities, and return the number of affected rows. They are extension methods of `IWriteRepository<TEntity>` (namespace `EfCore.Repository.Abstractions`), so they work on any write repository, including those a unit of work returns.
+
+```csharp
+int deleted = await write.DeleteWhereAsync(p => p.Age > 90);
+int updated = await write.UpdateWhereAsync(
+    p => p.Age < 18,
+    s => s.SetProperty(p => p.Name, "minor").SetProperty(p => p.Age, p => p.Age + 1));
+
+var adults = new SpecificationBase<Person> { Conditions = { p => p.Age >= 18, p => p.Name != "" } };
+int touched = await write.UpdateWhereAsync(adults, s => s.SetProperty(p => p.Age, p => p.Age + 1));
+```
+
+- **They bypass the change tracker.** The command runs immediately — no `SaveChangesAsync` needed. Pending tracked changes are not saved or discarded, and entities already tracked by the context keep their old values (or stay tracked although their row is deleted); reload them if you keep using them.
+- **Global query filters apply.** Rows hidden by a query filter of the entity (for example soft-deleted rows) are not updated or deleted.
+- **They join the current transaction.** Inside `BeginTransactionAsync` or `IUnitOfWork.ExecuteInTransactionAsync` the command is part of that transaction, so a rollback undoes it.
+- The setters lambda is passed unchanged to EF Core's set-based update. On .NET 10 (EF Core 10) the parameter is `Action<UpdateSettersBuilder<TEntity>>`, on .NET 8 and 9 it is `Expression<Func<SetPropertyCalls<TEntity>, SetPropertyCalls<TEntity>>>`; an inline lambda such as the ones above compiles unchanged on every target.
+- The specification overloads use only `Conditions` (all must match); includes, ordering and no-tracking are ignored. A specification without conditions, with a `null` condition, with `Skip`/`Take`, or a `PaginationSpecification` throws `ArgumentException` instead of touching more rows than intended — pass `_ => true` to the filter overload to target every row on purpose.
 
 ### Concurrency
 
