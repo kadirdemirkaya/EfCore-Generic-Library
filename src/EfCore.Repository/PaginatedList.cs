@@ -14,6 +14,7 @@
 
         private PaginatedList()
         {
+            Items = null!;
         }
 
         public int PageIndex { get; }

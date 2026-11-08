@@ -33,7 +33,7 @@ namespace EfCore.Repository.Attributes
             {
                 var parameter = parameterInfos[i];
 
-                if ((parameter.Name.Equals(nameof(IsServiceProvider), StringComparison.OrdinalIgnoreCase) || parameter.Name == "isServiceProvider") && IsServiceProvider.HasValue)
+                if ((parameter.Name!.Equals(nameof(IsServiceProvider), StringComparison.OrdinalIgnoreCase) || parameter.Name == "isServiceProvider") && IsServiceProvider.HasValue)
                 {
                     if (parameters[i] is bool isServiceProviderValue && isServiceProviderValue != IsServiceProvider.Value)
                     {

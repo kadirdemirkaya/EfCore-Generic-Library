@@ -8,10 +8,10 @@ namespace EfCore.Test.Entities
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        public string Description { get; set; }
+        public string Description { get; set; } = null!;
 
         public int PersonId { get; set; }
-        public Person Person { get; set; }
+        public Person Person { get; set; } = null!;
 
         public List<Product> Products { get; set; } = new();
     }

@@ -12,6 +12,7 @@ the repository owner.
 - Fix: `InsertAsync(List<TEntity>)` adds the whole list and saves it with a single `SaveChanges`, so the insert is all-or-nothing instead of leaving earlier entities saved when a later one fails; a list containing `null` throws `ArgumentNullException` before anything is saved. The returned keys keep the input order.
 - Fix: `UpdateAsync` checks every part of a composite primary key, so an entity whose first key part holds its default value (for example `OrderId = 0`) can be updated; it still throws when every key part is default or any key part is `null`.
 - Fix: paginated repository reads (`GetListAsync(PaginationSpecification)`, its projection overload and the paginated `Any`) order by primary key when the specification has no `OrderBy`, so pages no longer overlap or skip rows; a caller-supplied `OrderBy` is left unchanged.
+- Nullable annotations (both packages, no runtime behaviour change): `GetByIdAsync` and `GetAsync` return `Task<TEntity?>` / `Task<MapType?>` because they yield `null` when nothing matches; `Any(out TEntity?)` and `Any(out List<TEntity>?, ...)` carry `[NotNullWhen(true)]`; `SpecificationBase.Includes` / `OrderBy` and the repositories' and unit of work's `_serviceProvider` / `_databaseOptions` are nullable. Projects with nullable reference types enabled may see new warnings where these results are used without a null check.
 
 ## EfCore.RepositoryPack 1.3.0 - 2026-09-27
 

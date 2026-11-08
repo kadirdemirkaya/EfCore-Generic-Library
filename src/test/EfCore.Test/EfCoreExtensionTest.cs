@@ -14,7 +14,6 @@ namespace EfCore.Test
     [TestFixture]
     public class EfCoreExtensionTest
     {
-        private readonly IUnitOfWork<Person> _unitOfWork;
         private ServiceCollection _services;
 
         [OneTimeSetUp]

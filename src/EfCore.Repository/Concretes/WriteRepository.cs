@@ -10,8 +10,8 @@ namespace EfCore.Repository.Concretes
         where TEntity : class, new()
     {
         public new DbContext _dbContext { get; set; }
-        public new IServiceProvider _serviceProvider { get; set; }
-        public new DatabaseOptions _databaseOptions { get; set; }
+        public new IServiceProvider? _serviceProvider { get; set; }
+        public new DatabaseOptions? _databaseOptions { get; set; }
 
         public WriteRepository(DbContext dbContext)
             : base(dbContext)
@@ -113,8 +113,8 @@ namespace EfCore.Repository.Concretes
             EntityEntry<TEntity> entityEntry = await _dbContext.Set<TEntity>().AddAsync(entity, cancellationToken).ConfigureAwait(false);
             await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-            object[] primaryKeyValue = entityEntry.Metadata.FindPrimaryKey().Properties.
-                Select(p => entityEntry.Property(p.Name).CurrentValue).ToArray();
+            object[] primaryKeyValue = entityEntry.Metadata.FindPrimaryKey()!.Properties.
+                Select(p => entityEntry.Property(p.Name).CurrentValue!).ToArray();
 
             return primaryKeyValue;
         }
@@ -139,8 +139,8 @@ namespace EfCore.Repository.Concretes
             foreach (var entity in entities)
             {
                 EntityEntry<TEntity> entityEntry = _dbContext.Entry(entity);
-                primaryKeyValues.Add(entityEntry.Metadata.FindPrimaryKey().Properties.
-                    Select(p => entityEntry.Property(p.Name).CurrentValue).ToArray());
+                primaryKeyValues.Add(entityEntry.Metadata.FindPrimaryKey()!.Properties.
+                    Select(p => entityEntry.Property(p.Name).CurrentValue!).ToArray());
             }
 
             return primaryKeyValues.ToArray();

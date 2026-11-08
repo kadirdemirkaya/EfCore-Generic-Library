@@ -17,7 +17,6 @@ namespace EfCore.Test
         // Add process same time
         // get process same time
 
-        private readonly IUnitOfWork<Person> _unitOfWork;
         private ServiceCollection _services;
 
         [SetUp]
@@ -60,7 +59,7 @@ namespace EfCore.Test
                 typeof(IUnitOfWork<TEntity>),
                 sp =>
                 {
-                    TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext));
+                    TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext))!;
                     return RepositoryFactory<TDbContext>.CreateUnitOfWork<TEntity>(dbContext, sp);
                 },
                 serviceLifetime

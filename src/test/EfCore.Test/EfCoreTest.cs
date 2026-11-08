@@ -17,7 +17,6 @@ namespace EfCore.Test
     [TestFixture]
     public class EfCoreTest
     {
-        private readonly IUnitOfWork<Person> _unitOfWork;
         private ServiceCollection _services;
 
         [OneTimeSetUp]
@@ -67,7 +66,7 @@ namespace EfCore.Test
                 typeof(IUnitOfWork<TEntity>),
                 sp =>
                 {
-                    TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext));
+                    TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext))!;
                     return RepositoryFactory<TDbContext>.CreateUnitOfWork<TEntity>(dbContext, sp);
                 },
                 serviceLifetime
@@ -231,9 +230,9 @@ namespace EfCore.Test
                 await _writeRepo.AddAsync(new Person() { Age = 47, Name = "Can" });
                 await _writeRepo.SaveChangesAsync();
 
-                Person person = await _readRepo.GetAsync(p => p.Age == 47 && p.Name == "Can");
+                Person? person = await _readRepo.GetAsync(p => p.Age == 47 && p.Name == "Can");
 
-                bool res = await _writeRepo.DeleteAsync(person);
+                bool res = await _writeRepo.DeleteAsync(person!);
 
                 if (res)
                 {
@@ -499,7 +498,7 @@ namespace EfCore.Test
             var _unitOfWork = GetUnitOfWork<Person>(_sp);
             var _readRepo = _unitOfWork.GetDbReadRepository();
 
-            Person person1 = await _readRepo.GetByIdAsync(7);
+            Person? person1 = await _readRepo.GetByIdAsync(7);
 
 
             Expression<Func<Person, PersonDto>> selectExpression = person => new PersonDto
@@ -521,7 +520,7 @@ namespace EfCore.Test
                 }).ToList()
             };
 
-            PersonDto person3 = await _readRepo.GetByIdAsync<PersonDto>(8, selectExpression, true);
+            PersonDto? person3 = await _readRepo.GetByIdAsync<PersonDto>(8, selectExpression, true);
         }
 
         [Test]

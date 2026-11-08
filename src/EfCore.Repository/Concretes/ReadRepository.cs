@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -69,10 +70,10 @@ namespace EfCore.Repository.Concretes
         /// </summary>
         /// <param name="entity">The first entity, or <c>null</c> when the set is empty.</param>
         /// <returns><c>true</c> when at least one entity exists.</returns>
-        public bool Any(out TEntity entity)
+        public bool Any([NotNullWhen(true)] out TEntity? entity)
             => Any(out entity, null, false);
 
-        public bool Any(out TEntity entity, Expression<Func<TEntity, bool>> filter, bool asNoTracking = false)
+        public bool Any([NotNullWhen(true)] out TEntity? entity, Expression<Func<TEntity, bool>>? filter, bool asNoTracking = false)
         {
             entity = null;
 
@@ -93,7 +94,7 @@ namespace EfCore.Repository.Concretes
             return entity != null;
         }
 
-        public bool Any(out List<TEntity> entity, Expression<Func<TEntity, bool>> filter, bool asNoTracking = false)
+        public bool Any([NotNullWhen(true)] out List<TEntity>? entity, Expression<Func<TEntity, bool>> filter, bool asNoTracking = false)
         {
             entity = null;
 
@@ -247,16 +248,16 @@ namespace EfCore.Repository.Concretes
 
 
         #region Get
-        public async Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> filter, CancellationToken cancellationToken = default)
+        public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> filter, CancellationToken cancellationToken = default)
             => await GetAsync(filter, null, false, cancellationToken);
 
-        public async Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> filter, bool asNoTracking, CancellationToken cancellationToken = default)
+        public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> filter, bool asNoTracking, CancellationToken cancellationToken = default)
             => await GetAsync(filter, null, asNoTracking, cancellationToken);
 
-        public async Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> filter, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes, CancellationToken cancellationToken = default)
+        public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> filter, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes, CancellationToken cancellationToken = default)
             => await GetAsync(filter, includes, false, cancellationToken);
 
-        public async Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> filter, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes, bool asNoTracking, CancellationToken cancellationToken = default)
+        public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> filter, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? includes, bool asNoTracking, CancellationToken cancellationToken = default)
         {
             IQueryable<TEntity> query = _dbContext.Set<TEntity>();
 
@@ -272,10 +273,10 @@ namespace EfCore.Repository.Concretes
             return await query.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<TEntity> GetAsync(Specification<TEntity> specification, CancellationToken cancellationToken = default)
+        public async Task<TEntity?> GetAsync(Specification<TEntity> specification, CancellationToken cancellationToken = default)
             => await GetAsync(specification, false, cancellationToken);
 
-        public async Task<TEntity> GetAsync(Specification<TEntity> specification, bool asNoTracking, CancellationToken cancellationToken = default)
+        public async Task<TEntity?> GetAsync(Specification<TEntity> specification, bool asNoTracking, CancellationToken cancellationToken = default)
         {
             IQueryable<TEntity> query = _dbContext.Set<TEntity>();
 
@@ -288,7 +289,7 @@ namespace EfCore.Repository.Concretes
             return await query.FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<MapType> GetAsync<MapType>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, MapType>> mapFilter, CancellationToken cancellationToken = default)
+        public async Task<MapType?> GetAsync<MapType>(Expression<Func<TEntity, bool>> filter, Expression<Func<TEntity, MapType>> mapFilter, CancellationToken cancellationToken = default)
         {
             if (mapFilter == null)
                 throw new ArgumentNullException(nameof(mapFilter));
@@ -301,7 +302,7 @@ namespace EfCore.Repository.Concretes
             return await query.Select(mapFilter).FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<MapType> GetAsync<MapType>(Specification<TEntity> specification, Expression<Func<TEntity, MapType>> mapFilter, CancellationToken cancellationToken = default)
+        public async Task<MapType?> GetAsync<MapType>(Specification<TEntity> specification, Expression<Func<TEntity, MapType>> mapFilter, CancellationToken cancellationToken = default)
         {
             if (mapFilter == null)
                 throw new ArgumentNullException(nameof(mapFilter));
@@ -316,7 +317,7 @@ namespace EfCore.Repository.Concretes
         #endregion
 
         #region GetById
-        public async Task<TEntity> GetByIdAsync(object id, bool asNoTracking, CancellationToken cancellationToken = default)
+        public async Task<TEntity?> GetByIdAsync(object id, bool asNoTracking, CancellationToken cancellationToken = default)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
@@ -324,7 +325,7 @@ namespace EfCore.Repository.Concretes
             return await GetByIdAsync(id, null, asNoTracking, cancellationToken);
         }
 
-        public async Task<TEntity> GetByIdAsync(object id, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes, CancellationToken cancellationToken = default)
+        public async Task<TEntity?> GetByIdAsync(object id, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes, CancellationToken cancellationToken = default)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
@@ -332,12 +333,12 @@ namespace EfCore.Repository.Concretes
             return await GetByIdAsync(id, includes, false, cancellationToken);
         }
 
-        public async Task<TEntity> GetByIdAsync(object id, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes, bool asNoTracking, CancellationToken cancellationToken = default)
+        public async Task<TEntity?> GetByIdAsync(object id, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? includes, bool asNoTracking, CancellationToken cancellationToken = default)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
 
-            IEntityType entityType = _dbContext.Model.FindEntityType(typeof(TEntity));
+            IEntityType entityType = _dbContext.Model.FindEntityType(typeof(TEntity))!;
             Expression<Func<TEntity, bool>> expressionTree = BuildPrimaryKeyExpression(id, entityType);
 
             IQueryable<TEntity> query = _dbContext.Set<TEntity>();
@@ -351,7 +352,7 @@ namespace EfCore.Repository.Concretes
             return await query.FirstOrDefaultAsync(expressionTree, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<MapType> GetByIdAsync<MapType>(object id, Expression<Func<TEntity, MapType>> mapFilter, bool asNoTracking, CancellationToken cancellationToken = default)
+        public async Task<MapType?> GetByIdAsync<MapType>(object id, Expression<Func<TEntity, MapType>> mapFilter, bool asNoTracking, CancellationToken cancellationToken = default)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
@@ -359,7 +360,7 @@ namespace EfCore.Repository.Concretes
             if (mapFilter == null)
                 throw new ArgumentNullException(nameof(mapFilter));
 
-            IEntityType entityType = _dbContext.Model.FindEntityType(typeof(TEntity));
+            IEntityType entityType = _dbContext.Model.FindEntityType(typeof(TEntity))!;
             Expression<Func<TEntity, bool>> expressionTree = BuildPrimaryKeyExpression(id, entityType);
 
             IQueryable<TEntity> query = _dbContext.Set<TEntity>();
@@ -402,14 +403,14 @@ namespace EfCore.Repository.Concretes
         #region GetList
         public async Task<List<TEntity>> GetListAsync(bool asNoTracking, CancellationToken cancellationToken = default)
         {
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> nullValue = null;
+            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? nullValue = null;
             return await GetListAsync(nullValue, asNoTracking, cancellationToken);
         }
 
         public async Task<List<TEntity>> GetListAsync(Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes, CancellationToken cancellationToken = default)
             => await GetListAsync(includes, false, cancellationToken);
 
-        public async Task<List<TEntity>> GetListAsync(Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes, bool asNoTracking, CancellationToken cancellationToken = default)
+        public async Task<List<TEntity>> GetListAsync(Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? includes, bool asNoTracking, CancellationToken cancellationToken = default)
         {
             IQueryable<TEntity> query = _dbContext.Set<TEntity>();
 
@@ -435,7 +436,7 @@ namespace EfCore.Repository.Concretes
         public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> filter, bool asNoTracking, CancellationToken cancellationToken = default)
             => await GetListAsync(filter, null, asNoTracking, cancellationToken);
 
-        public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> filter, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes, bool asNoTracking = false, CancellationToken cancellationToken = default)
+        public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> filter, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? includes, bool asNoTracking = false, CancellationToken cancellationToken = default)
         {
             IQueryable<TEntity> query = _dbContext.Set<TEntity>();
 

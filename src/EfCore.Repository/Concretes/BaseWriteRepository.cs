@@ -12,8 +12,8 @@ namespace EfCore.Repository.Concretes
         where TEntity : class, new()
     {
         public DbContext _dbContext { get; set; }
-        public IServiceProvider _serviceProvider { get; set; }
-        public DatabaseOptions _databaseOptions { get; set; }
+        public IServiceProvider? _serviceProvider { get; set; }
+        public DatabaseOptions? _databaseOptions { get; set; }
 
         public BaseWriteRepository(DbContext dbContext)
         {
@@ -85,11 +85,11 @@ namespace EfCore.Repository.Concretes
                 throw new ArgumentNullException(nameof(entity));
             }
 
-            EntityEntry<TEntity> trackedEntity = _dbContext.ChangeTracker.Entries<TEntity>().FirstOrDefault(x => x.Entity == entity);
+            EntityEntry<TEntity>? trackedEntity = _dbContext.ChangeTracker.Entries<TEntity>().FirstOrDefault(x => x.Entity == entity);
 
             if (trackedEntity == null)
             {
-                IEntityType entityType = _dbContext.Model.FindEntityType(typeof(TEntity));
+                IEntityType? entityType = _dbContext.Model.FindEntityType(typeof(TEntity));
 
                 if (entityType == null)
                 {

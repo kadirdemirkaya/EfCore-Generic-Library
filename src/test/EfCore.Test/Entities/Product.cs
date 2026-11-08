@@ -9,9 +9,9 @@ namespace EfCore.Test.Entities
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        public string ProductDescription { get; set; }
+        public string ProductDescription { get; set; } = null!;
 
         public int BasketId { get; set; }
-        public Basket Basket { get; set; }
+        public Basket Basket { get; set; } = null!;
     }
 }

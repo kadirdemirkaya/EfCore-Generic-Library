@@ -1,5 +1,6 @@
 ﻿using Base.Repository.Abstractions;
 using Microsoft.EntityFrameworkCore.Query;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 
 namespace EfCore.Repository.Abstractions
@@ -69,21 +70,21 @@ namespace EfCore.Repository.Abstractions
 
 
         #region GetById
-        Task<TEntity> GetByIdAsync(object id, bool asNoTracking, CancellationToken cancellationToken = default);
+        Task<TEntity?> GetByIdAsync(object id, bool asNoTracking, CancellationToken cancellationToken = default);
 
-        Task<TEntity> GetByIdAsync(
+        Task<TEntity?> GetByIdAsync(
            object id,
            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes,
            CancellationToken cancellationToken = default);
 
-        Task<TEntity> GetByIdAsync(
+        Task<TEntity?> GetByIdAsync(
          object id,
          Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes,
          bool asNoTracking,
          CancellationToken cancellationToken = default);
 
 
-        Task<MapType> GetByIdAsync<MapType>(
+        Task<MapType?> GetByIdAsync<MapType>(
            object id,
            Expression<Func<TEntity, MapType>> mapFilter,
             bool asNoTracking,
@@ -95,37 +96,37 @@ namespace EfCore.Repository.Abstractions
 
 
         #region Get
-        Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> filter, CancellationToken cancellationToken = default);
+        Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> filter, CancellationToken cancellationToken = default);
 
-        Task<TEntity> GetAsync(
+        Task<TEntity?> GetAsync(
             Expression<Func<TEntity, bool>> filter,
             bool asNoTracking,
             CancellationToken cancellationToken = default);
 
-        Task<TEntity> GetAsync(
+        Task<TEntity?> GetAsync(
             Expression<Func<TEntity, bool>> filter,
             Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes,
             CancellationToken cancellationToken = default);
 
-        Task<TEntity> GetAsync(
+        Task<TEntity?> GetAsync(
            Expression<Func<TEntity, bool>> filter,
            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> includes,
            bool asNoTracking,
            CancellationToken cancellationToken = default);
 
-        Task<TEntity> GetAsync(Specification<TEntity> specification, CancellationToken cancellationToken = default);
+        Task<TEntity?> GetAsync(Specification<TEntity> specification, CancellationToken cancellationToken = default);
 
-        Task<TEntity> GetAsync(
+        Task<TEntity?> GetAsync(
           Specification<TEntity> specification,
           bool asNoTracking,
           CancellationToken cancellationToken = default);
 
-        Task<MapType> GetAsync<MapType>(
+        Task<MapType?> GetAsync<MapType>(
            Expression<Func<TEntity, bool>> filter,
            Expression<Func<TEntity, MapType>> mapFilter,
            CancellationToken cancellationToken = default);
 
-        Task<MapType> GetAsync<MapType>(
+        Task<MapType?> GetAsync<MapType>(
            Specification<TEntity> specification,
            Expression<Func<TEntity, MapType>> mapFilter,
            CancellationToken cancellationToken = default);
@@ -146,11 +147,11 @@ namespace EfCore.Repository.Abstractions
         Task<bool> AnyAsync(Expression<Func<TEntity, bool>> filter, bool asNoTracking = false, CancellationToken cancellationToken = default);
         Task<bool> AnyAsync(IEnumerable<Expression<Func<TEntity, bool>>> filters, bool asNoTracking = false,CancellationToken cancellationToken = default);
 
-        bool Any(out TEntity entity);
+        bool Any([NotNullWhen(true)] out TEntity? entity);
 
-        bool Any(out TEntity entity, Expression<Func<TEntity, bool>> filter, bool asNoTracking = false);
+        bool Any([NotNullWhen(true)] out TEntity? entity, Expression<Func<TEntity, bool>> filter, bool asNoTracking = false);
 
-        bool Any(out List<TEntity> entity, Expression<Func<TEntity, bool>> filter, bool asNoTracking = false);
+        bool Any([NotNullWhen(true)] out List<TEntity>? entity, Expression<Func<TEntity, bool>> filter, bool asNoTracking = false);
 
         bool Any(out List<TEntity> entities,
            Expression<Func<TEntity, bool>> filter,

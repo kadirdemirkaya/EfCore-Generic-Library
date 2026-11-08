@@ -17,8 +17,8 @@ namespace EfCore.Repository.Concretes
         where TEntity : class, new()
     {
         public DbContext _dbContext { get; set; }
-        public IServiceProvider _serviceProvider { get; set; }
-        public DatabaseOptions _databaseOptions { get; set; }
+        public IServiceProvider? _serviceProvider { get; set; }
+        public DatabaseOptions? _databaseOptions { get; set; }
 
         public BaseReadRepository(DbContext dbContext)
         {
@@ -74,7 +74,7 @@ namespace EfCore.Repository.Concretes
         public async Task<List<TEntity>> GetListAsync(CancellationToken cancellationToken = default)
           => await _dbContext.Set<TEntity>().ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        public async Task<TEntity> GetByIdAsync(object id, CancellationToken cancellationToken = default)
+        public async Task<TEntity?> GetByIdAsync(object id, CancellationToken cancellationToken = default)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
@@ -83,7 +83,7 @@ namespace EfCore.Repository.Concretes
         }
         protected static Expression<Func<TEntity, bool>> BuildPrimaryKeyExpression(object id, IEntityType entityType)
         {
-            IReadOnlyList<IProperty> keyProperties = entityType.FindPrimaryKey()?.Properties;
+            IReadOnlyList<IProperty>? keyProperties = entityType.FindPrimaryKey()?.Properties;
 
             if (keyProperties == null || keyProperties.Count == 0)
                 throw new ArgumentException("Entity does not have any primary key defined", nameof(id));
@@ -94,7 +94,7 @@ namespace EfCore.Repository.Concretes
                 throw new ArgumentException($"{typeof(TEntity).Name} has {keyProperties.Count} primary key properties but {keyValues.Length} values were given.", nameof(id));
 
             ParameterExpression pe = Expression.Parameter(typeof(TEntity), "entity");
-            Expression body = null;
+            Expression? body = null;
 
             for (int i = 0; i < keyValues.Length; i++)
             {
@@ -104,6 +104,9 @@ namespace EfCore.Repository.Concretes
 
                 body = body == null ? equal : Expression.AndAlso(body, equal);
             }
+
+            if (body == null)
+                throw new ArgumentException("No primary key values were given.", nameof(id));
 
             return Expression.Lambda<Func<TEntity, bool>>(body, new[] { pe });
         }
@@ -123,12 +126,12 @@ namespace EfCore.Repository.Concretes
             }
         }
 
-        private async Task<TEntity> GetByIdAsync(object id, bool asNoTracking, CancellationToken cancellationToken = default)
+        private async Task<TEntity?> GetByIdAsync(object id, bool asNoTracking, CancellationToken cancellationToken = default)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));
 
-            IEntityType entityType = _dbContext.Model.FindEntityType(typeof(TEntity));
+            IEntityType entityType = _dbContext.Model.FindEntityType(typeof(TEntity))!;
             Expression<Func<TEntity, bool>> expressionTree = BuildPrimaryKeyExpression(id, entityType);
 
             IQueryable<TEntity> query = _dbContext.Set<TEntity>();

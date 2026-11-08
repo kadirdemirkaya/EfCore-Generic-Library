@@ -307,7 +307,7 @@ namespace EfCore.Repository.Extensions
 
                                var genericMethod = createUnitOfWorkMethod.MakeGenericMethod(entityType);
 
-                               return genericMethod.Invoke(repositoryFactory, new object[] { dbContext });
+                               return genericMethod.Invoke(repositoryFactory, new object[] { dbContext })!;
                            },
                            serviceLifetime
                        ));

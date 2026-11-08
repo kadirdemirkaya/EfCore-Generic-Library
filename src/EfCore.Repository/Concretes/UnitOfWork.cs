@@ -10,8 +10,8 @@ namespace EfCore.Repository.Concretes
         where TEntity : class, new()
     {
         public DbContext _dbContext { get; private set; }
-        public IServiceProvider _serviceProvider { get; private set; }
-        public DatabaseOptions _databaseOptions { get; private set; }
+        public IServiceProvider? _serviceProvider { get; private set; }
+        public DatabaseOptions? _databaseOptions { get; private set; }
 
         public UnitOfWork(DbContext dbContext)
         {
@@ -24,11 +24,11 @@ namespace EfCore.Repository.Concretes
             _serviceProvider = serviceProvider;
         }
 
-        public UnitOfWork(DatabaseOptions databaseOptions, IServiceProvider serviceProvider)
+        public UnitOfWork(DatabaseOptions databaseOptions, IServiceProvider? serviceProvider)
         {
             _databaseOptions = databaseOptions;
             _serviceProvider = serviceProvider;
-            _dbContext = databaseOptions?.Connection as DbContext;
+            _dbContext = (databaseOptions?.Connection as DbContext)!;
         }
 
         public ITable GetTable() => new Table(_dbContext);
