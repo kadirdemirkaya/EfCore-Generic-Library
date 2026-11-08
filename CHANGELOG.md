@@ -7,6 +7,8 @@ the repository owner.
 ## Unreleased
 
 - Added `LICENSE.txt` and this changelog.
+- Fix: entities registered one by one with `EfCoreRepositoryServiceRegistration<TEntity, TDbContext>(lifetime)` now share one context per `TDbContext`, so a unit of work saves changes made through another entity's repositories.
+- Fix: the assembly-scan registration no longer registers the marker type as a service, so resolving it no longer throws and an existing registration of the marker type is kept.
 
 ## EfCore.RepositoryPack 1.3.0 - 2026-09-27
 

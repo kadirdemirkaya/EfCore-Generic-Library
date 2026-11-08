@@ -115,7 +115,7 @@ namespace EfCore.Repository.Extensions
             }
             else
             {
-                TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext));
+                TDbContext dbContext = GetOrCreateSharedContext<TDbContext>(services);
 
                 services.Add(new ServiceDescriptor(
                    typeof(IBaseReadRepository<TEntity>),
@@ -214,16 +214,19 @@ namespace EfCore.Repository.Extensions
                     var dbReadRepositoryType = typeof(DbReadRepository<>).MakeGenericType(entityType);
                     var dbWriteRepositoryType = typeof(DbWriteRepository<>).MakeGenericType(entityType);
 
-                    services.Add(new ServiceDescriptor(
-                        typeof(TBaseType),
-                        sp =>
-                        {
-                            var dbContext = sp.GetRequiredService<TDbContext>();
+                    if (HasContextConstructor<TDbContext>(entityType))
+                    {
+                        services.Add(new ServiceDescriptor(
+                            typeof(TBaseType),
+                            sp =>
+                            {
+                                var dbContext = sp.GetRequiredService<TDbContext>();
 
-                            return Activator.CreateInstance(entityType, dbContext, sp)!;
-                        },
-                        serviceLifetime
-                    ));
+                                return Activator.CreateInstance(entityType, dbContext, sp)!;
+                            },
+                            serviceLifetime
+                        ));
+                    }
 
                     services.Add(new ServiceDescriptor(
                         baseReadIRepositoryType,
@@ -318,5 +321,31 @@ namespace EfCore.Repository.Extensions
                && !type.IsAbstract
                && !type.IsGenericTypeDefinition
                && type.GetConstructor(Type.EmptyTypes) != null;
+
+        private static bool HasContextConstructor<TDbContext>(Type type)
+            where TDbContext : DbContext
+            => type.GetConstructor(new[] { typeof(TDbContext), typeof(IServiceProvider) }) != null;
+
+        private static TDbContext GetOrCreateSharedContext<TDbContext>(IServiceCollection services)
+            where TDbContext : DbContext
+        {
+            if (services.FirstOrDefault(d => d.ServiceType == typeof(SharedDbContext<TDbContext>))?.ImplementationInstance is SharedDbContext<TDbContext> shared)
+            {
+                return shared.Context;
+            }
+
+            TDbContext dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext))!;
+            services.Add(new ServiceDescriptor(typeof(SharedDbContext<TDbContext>), new SharedDbContext<TDbContext>(dbContext)));
+
+            return dbContext;
+        }
+
+        private sealed class SharedDbContext<TDbContext>
+            where TDbContext : DbContext
+        {
+            public SharedDbContext(TDbContext context) => Context = context;
+
+            public TDbContext Context { get; }
+        }
     }
 }

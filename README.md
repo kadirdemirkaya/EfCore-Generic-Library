@@ -47,7 +47,7 @@ services.AddDbContext<AppDbContext>(o => o.UseSqlServer(connectionString));
 services.AddEfCoreRepository<Person, AppDbContext>();
 ```
 
-Register a single entity with one context created through the parameterless constructor of `AppDbContext` (configured in `OnConfiguring`) and shared by every resolve:
+Register a single entity with one context created through the parameterless constructor of `AppDbContext` (configured in `OnConfiguring`) and shared by every resolve and by every entity registered this way with the same context type:
 
 ```csharp
 services.EfCoreRepositoryServiceRegistration<Person, AppDbContext>(ServiceLifetime.Scoped);
