@@ -166,7 +166,7 @@ await write.UpdateAsync(person);
 await write.DeleteAsync(person);
 ```
 
-`UpdateAsync` saves immediately. To batch updates with other changes, `Update(entity)` and `Update(entities)` mark entities as modified without saving; the next `SaveChangesAsync` (of the repository or of a unit of work on the same context) writes everything at once. They are instance methods of `WriteRepository<TEntity>` and extension methods of `IWriteRepository<TEntity>` (namespace `EfCore.Repository.Abstractions`), so they also work on the repositories a unit of work returns. An untracked entity gets the same primary key check as `UpdateAsync` (`InvalidOperationException` when a key part is `null` or every part is default); a list is checked completely before anything is attached.
+`UpdateAsync` saves immediately. To batch updates with other changes, `Update(entity)` and `Update(entities)` mark entities as modified without saving; the next `SaveChangesAsync` (of the repository or of a unit of work on the same context) writes everything at once. They are instance methods of `WriteRepository<TEntity>` and extension methods of `IWriteRepository<TEntity>` (namespace `EfCore.Repository.Abstractions`), so they also work on the repositories a unit of work returns. An untracked entity gets the same primary key check as `UpdateAsync` (`InvalidOperationException` when a key part is `null` or every part is default); a list is checked completely before anything is attached. The key values are read through the EF Core model, so keys mapped to a field or to a shadow property are checked too; for a shadow key, set its value with `context.Entry(entity).Property("Id").CurrentValue = id` before calling `UpdateAsync` or `Update`.
 
 ```csharp
 write.Update(person);

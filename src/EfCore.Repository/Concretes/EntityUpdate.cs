@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace EfCore.Repository.Concretes
@@ -22,6 +23,7 @@ namespace EfCore.Repository.Concretes
                 return;
             }
 
+            EntityEntry<TEntity> entry = dbContext.Entry(entity);
             bool anyKeyPartNull = false;
             bool allKeyPartsDefault = true;
 
@@ -29,7 +31,7 @@ namespace EfCore.Repository.Concretes
             {
                 object? keyDefaultValue = keyProperty.ClrType.IsValueType ? Activator.CreateInstance(keyProperty.ClrType) : null;
 
-                object? keyValue = entity.GetType().GetProperty(keyProperty.Name)?.GetValue(entity, null);
+                object? keyValue = entry.Property(keyProperty.Name).CurrentValue;
 
                 anyKeyPartNull |= keyValue == null;
                 allKeyPartsDefault &= Equals(keyDefaultValue, keyValue);
