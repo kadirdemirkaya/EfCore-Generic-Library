@@ -1,8 +1,6 @@
 ﻿using Base.Repository.Abstractions;
 using Base.Repository.Options;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 using System.Data;
 
@@ -85,42 +83,7 @@ namespace EfCore.Repository.Concretes
                 throw new ArgumentNullException(nameof(entity));
             }
 
-            EntityEntry<TEntity>? trackedEntity = _dbContext.ChangeTracker.Entries<TEntity>().FirstOrDefault(x => x.Entity == entity);
-
-            if (trackedEntity == null)
-            {
-                IEntityType? entityType = _dbContext.Model.FindEntityType(typeof(TEntity));
-
-                if (entityType == null)
-                {
-                    throw new InvalidOperationException($"{typeof(TEntity).Name} is not part of EF Core DbContext model");
-                }
-
-                IReadOnlyList<IProperty>? keyProperties = entityType.FindPrimaryKey()?.Properties;
-
-                if (keyProperties != null && keyProperties.Count != 0)
-                {
-                    bool anyKeyPartNull = false;
-                    bool allKeyPartsDefault = true;
-
-                    foreach (IProperty keyProperty in keyProperties)
-                    {
-                        object? keyDefaultValue = keyProperty.ClrType.IsValueType ? Activator.CreateInstance(keyProperty.ClrType) : null;
-
-                        object? keyValue = entity.GetType().GetProperty(keyProperty.Name)?.GetValue(entity, null);
-
-                        anyKeyPartNull |= keyValue == null;
-                        allKeyPartsDefault &= Equals(keyDefaultValue, keyValue);
-                    }
-
-                    if (anyKeyPartNull || allKeyPartsDefault)
-                    {
-                        throw new InvalidOperationException("The primary key value of the entity to be updated is not valid.");
-                    }
-                }
-
-                _dbContext.Set<TEntity>().Update(entity);
-            }
+            EntityUpdate.MarkModified(_dbContext, entity);
 
             return await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
         }

@@ -184,5 +184,28 @@ namespace EfCore.Repository.Concretes
             return await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
         }
 
+        /// <summary>
+        /// Marks <paramref name="entity"/> as modified without saving; the change is written by the next
+        /// <c>SaveChangesAsync</c> of the repository or of the unit of work sharing its context. A tracked entity is left
+        /// as it is, so only its changed properties are written. An untracked entity is attached with every property
+        /// marked modified after the same primary key check as <c>UpdateAsync</c>.
+        /// </summary>
+        /// <param name="entity">The entity to update.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="entity"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InvalidOperationException">The entity is untracked and a primary key part is <see langword="null"/> or every part holds its default value.</exception>
+        public void Update(TEntity entity)
+            => EntityUpdate.MarkModified(_dbContext, entity);
+
+        /// <summary>
+        /// Marks every entity of <paramref name="entities"/> as modified without saving, with the same rules as
+        /// <see cref="Update(TEntity)"/>. Every untracked entity is checked before any of them is attached, so an invalid
+        /// key leaves the context unchanged. One <c>SaveChangesAsync</c> writes them all.
+        /// </summary>
+        /// <param name="entities">The entities to update.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="entities"/> is <see langword="null"/> or contains <see langword="null"/>.</exception>
+        /// <exception cref="InvalidOperationException">An untracked entity has a primary key part that is <see langword="null"/> or only default key values.</exception>
+        public void Update(IEnumerable<TEntity> entities)
+            => EntityUpdate.MarkModified(_dbContext, entities);
+
     }
 }

@@ -26,6 +26,7 @@ public class PersonService(IUnitOfWork<Person> unitOfWork)
 - Lookup by primary key, including composite keys (`GetByIdAsync(new object[] { ... })`)
 - Unit of work per entity with access to every repository flavour
 - Entity-independent unit of work: repositories of several entities on one context, one save or one transaction (retry-strategy aware)
+- Updates without an immediate save (`Update`), written together with other changes by one `SaveChangesAsync`
 - Specifications: conditions, includes, ordering, skip/take and no-tracking in one object
 - Pagination with `PaginatedList<T>` (total items, total pages, page index/size)
 - Raw SQL queries with parameters (interpolated or placeholder style) and commands, transactions with isolation level
@@ -121,6 +122,18 @@ object[] key = await write.InsertAsync(new Person { Name = "Alan", Age = 41 });
 await write.UpdateAsync(person);
 await write.DeleteAsync(person);
 ```
+
+`UpdateAsync` saves immediately. To batch updates with other changes, `Update(entity)` and `Update(entities)` mark entities as modified without saving; the next `SaveChangesAsync` (of the repository or of a unit of work on the same context) writes everything at once. They are instance methods of `WriteRepository<TEntity>` and extension methods of `IWriteRepository<TEntity>` (namespace `EfCore.Repository.Abstractions`), so they also work on the repositories a unit of work returns. An untracked entity gets the same primary key check as `UpdateAsync` (`InvalidOperationException` when a key part is `null` or every part is default); a list is checked completely before anything is attached.
+
+```csharp
+write.Update(person);
+write.Update(otherPeople);
+await write.SaveChangesAsync();
+```
+
+### Concurrency
+
+For entities with a concurrency token (`[ConcurrencyCheck]`, `[Timestamp]` or `IsConcurrencyToken()`/`IsRowVersion()`), a save that finds the row changed by someone else throws `DbUpdateConcurrencyException` from `SaveChangesAsync`, `UpdateAsync`, `DeleteAsync` or the unit of work save. The repositories pass it through unchanged and do not retry or resolve the conflict: catch it, reload or merge the values, and save again.
 
 ## Transactions and raw SQL
 

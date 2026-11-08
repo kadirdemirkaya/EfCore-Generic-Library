@@ -15,6 +15,8 @@ namespace EfCore.Repository.Unit.Test.Data
 
         public DbSet<OrderLine> OrderLines { get; set; }
 
+        public DbSet<VersionedNote> VersionedNotes { get; set; }
+
         public TestDbContext()
         {
         }
