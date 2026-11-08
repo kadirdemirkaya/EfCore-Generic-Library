@@ -6,6 +6,7 @@ using EfCore.Repository.Factory;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Metadata;
 
@@ -219,104 +220,96 @@ namespace EfCore.Repository.Extensions
 
                     if (HasContextConstructor<TDbContext>(entityType))
                     {
-                        services.Add(new ServiceDescriptor(
-                            typeof(TBaseType),
-                            sp =>
-                            {
-                                var dbContext = sp.GetRequiredService<TDbContext>();
-
-                                return Activator.CreateInstance(entityType, dbContext, sp)!;
-                            },
-                            serviceLifetime
-                        ));
+                        services.Add(new ServiceDescriptor(typeof(TBaseType), CreateContextFactory<TDbContext>(entityType), serviceLifetime));
                     }
 
-                    services.Add(new ServiceDescriptor(
-                        baseReadIRepositoryType,
-                        sp =>
-                        {
-                            var dbContext = sp.GetRequiredService<TDbContext>();
-
-                            return Activator.CreateInstance(baseReadRepositoryType, dbContext, sp)!;
-                        },
-                        serviceLifetime
-                    ));
-                    services.Add(new ServiceDescriptor(
-                        baseWriteIRepositoryType,
-                        sp =>
-                        {
-                            var dbContext = sp.GetRequiredService<TDbContext>();
-
-                            return Activator.CreateInstance(baseWriteRepositoryType, dbContext, sp)!;
-                        },
-                        serviceLifetime
-                    ));
-                    services.Add(new ServiceDescriptor(
-                         writeIRepositoryType,
-                         sp =>
-                         {
-                             var dbContext = sp.GetRequiredService<TDbContext>();
-
-                             return Activator.CreateInstance(writeRepositoryType, dbContext, sp)!;
-                         },
-                         serviceLifetime
-                    ));
-                    services.Add(new ServiceDescriptor(
-                        readIRepositoryType,
-                        sp =>
-                        {
-                            var dbContext = sp.GetRequiredService<TDbContext>();
-
-                            return Activator.CreateInstance(readRepositoryType, dbContext, sp)!;
-                        },
-                        serviceLifetime
-                    ));
-                    services.Add(new ServiceDescriptor(
-                      dbReadIRepositoryType,
-                      sp =>
-                      {
-                          var dbContext = sp.GetRequiredService<TDbContext>();
-
-                          return Activator.CreateInstance(dbReadRepositoryType, dbContext, sp)!;
-                      },
-                      serviceLifetime
-                    ));
-                    services.Add(new ServiceDescriptor(
-                      dbWriteIRepositoryType,
-                      sp =>
-                      {
-                          var dbContext = sp.GetRequiredService<TDbContext>();
-
-                          return Activator.CreateInstance(dbWriteRepositoryType, dbContext, sp)!;
-                      },
-                      serviceLifetime
-                    ));
-                    services.Add(new ServiceDescriptor(
-                           iUnitOfWork,
-                           sp =>
-                           {
-                               var dbContext = sp.GetRequiredService<TDbContext>();
-
-                               var repositoryFactory = (RepositoryNoneStaticFactory<TDbContext>)sp.GetRequiredService(typeof(RepositoryNoneStaticFactory<TDbContext>));
-
-                               var createUnitOfWorkMethod = repositoryFactory
-                                   .GetType()
-                                   .GetMethod(nameof(RepositoryNoneStaticFactory<TDbContext>.CreateUnitOfWork), new[] { dbContext.GetType() });
-
-                               if (createUnitOfWorkMethod == null)
-                               {
-                                   throw new InvalidOperationException("CreateUnitOfWork method is not found.");
-                               }
-
-                               var genericMethod = createUnitOfWorkMethod.MakeGenericMethod(entityType);
-
-                               return genericMethod.Invoke(repositoryFactory, new object[] { dbContext })!;
-                           },
-                           serviceLifetime
-                       ));
+                    services.Add(new ServiceDescriptor(baseReadIRepositoryType, CreateContextFactory<TDbContext>(baseReadRepositoryType), serviceLifetime));
+                    services.Add(new ServiceDescriptor(baseWriteIRepositoryType, CreateContextFactory<TDbContext>(baseWriteRepositoryType), serviceLifetime));
+                    services.Add(new ServiceDescriptor(writeIRepositoryType, CreateContextFactory<TDbContext>(writeRepositoryType), serviceLifetime));
+                    services.Add(new ServiceDescriptor(readIRepositoryType, CreateContextFactory<TDbContext>(readRepositoryType), serviceLifetime));
+                    services.Add(new ServiceDescriptor(dbReadIRepositoryType, CreateContextFactory<TDbContext>(dbReadRepositoryType), serviceLifetime));
+                    services.Add(new ServiceDescriptor(dbWriteIRepositoryType, CreateContextFactory<TDbContext>(dbWriteRepositoryType), serviceLifetime));
+                    services.Add(new ServiceDescriptor(iUnitOfWork, CreateUnitOfWorkFactory<TDbContext>(entityType), serviceLifetime));
                 }
             }
             return services;
+        }
+
+        private static Func<IServiceProvider, object> CreateContextFactory<TDbContext>(Type implementationType)
+            where TDbContext : DbContext
+        {
+            ConstructorInfo? constructor = implementationType.GetConstructor(new[] { typeof(TDbContext), typeof(IServiceProvider) });
+
+            if (constructor is null)
+            {
+                return sp => Activator.CreateInstance(implementationType, sp.GetRequiredService<TDbContext>(), sp)!;
+            }
+
+            ParameterExpression contextParameter = Expression.Parameter(typeof(TDbContext), "dbContext");
+            ParameterExpression providerParameter = Expression.Parameter(typeof(IServiceProvider), "serviceProvider");
+            ParameterInfo[] constructorParameters = constructor.GetParameters();
+
+            Func<TDbContext, IServiceProvider, object> create = Expression.Lambda<Func<TDbContext, IServiceProvider, object>>(
+                Expression.Convert(
+                    Expression.New(
+                        constructor,
+                        Expression.Convert(contextParameter, constructorParameters[0].ParameterType),
+                        Expression.Convert(providerParameter, constructorParameters[1].ParameterType)),
+                    typeof(object)),
+                contextParameter,
+                providerParameter).Compile();
+
+            return sp =>
+            {
+                TDbContext dbContext = sp.GetRequiredService<TDbContext>();
+
+                try
+                {
+                    return create(dbContext, sp);
+                }
+                catch (Exception exception)
+                {
+                    throw new TargetInvocationException(exception);
+                }
+            };
+        }
+
+        private static Func<IServiceProvider, object> CreateUnitOfWorkFactory<TDbContext>(Type entityType)
+            where TDbContext : DbContext
+        {
+            MethodInfo? createUnitOfWorkMethod = typeof(RepositoryNoneStaticFactory<TDbContext>)
+                .GetMethod(nameof(RepositoryNoneStaticFactory<TDbContext>.CreateUnitOfWork), new[] { typeof(TDbContext) });
+
+            if (createUnitOfWorkMethod is null)
+            {
+                return _ => throw new InvalidOperationException("CreateUnitOfWork method is not found.");
+            }
+
+            ParameterExpression factoryParameter = Expression.Parameter(typeof(RepositoryNoneStaticFactory<TDbContext>), "repositoryFactory");
+            ParameterExpression contextParameter = Expression.Parameter(typeof(TDbContext), "dbContext");
+
+            Func<RepositoryNoneStaticFactory<TDbContext>, TDbContext, object> create = Expression.Lambda<Func<RepositoryNoneStaticFactory<TDbContext>, TDbContext, object>>(
+                Expression.Convert(
+                    Expression.Call(factoryParameter, createUnitOfWorkMethod.MakeGenericMethod(entityType), contextParameter),
+                    typeof(object)),
+                factoryParameter,
+                contextParameter).Compile();
+
+            return sp =>
+            {
+                TDbContext dbContext = sp.GetRequiredService<TDbContext>();
+
+                var repositoryFactory = (RepositoryNoneStaticFactory<TDbContext>)sp.GetRequiredService(typeof(RepositoryNoneStaticFactory<TDbContext>));
+
+                try
+                {
+                    return create(repositoryFactory, dbContext);
+                }
+                catch (Exception exception)
+                {
+                    throw new TargetInvocationException(exception);
+                }
+            };
         }
 
         private static bool IsConstructableEntity(Type type)

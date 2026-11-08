@@ -17,6 +17,10 @@ version number. The release number and the NuGet publish are chosen by the repos
 - README: documents that `DbUpdateConcurrencyException` for entities with a concurrency token is passed through unchanged by the save and update methods (no behaviour change).
 - `SaveChangesAsync(CancellationToken)` overloads on `UnitOfWork<TEntity>` and `BaseWriteRepository<TEntity>`. The interfaces `IUnitOfWork<TEntity>` and `IBaseWriteRepository<TEntity>` are unchanged, so existing implementations of them keep compiling.
 
+### Changed
+
+- The assembly-scanning `EfCoreRepositoryServiceRegistration<TBaseType, TDbContext>(lifetime, assemblies)` builds the constructor call of every registered repository, unit of work and context-aware entity once at registration time instead of locating it through reflection on every resolve. Resolved types, lifetimes, the context and service provider passed to them, and the exception thrown by a failing constructor (`TargetInvocationException` wrapping the original) are unchanged; resolving is roughly three times faster.
+
 ### Fixed
 
 - The primary key check of `UpdateAsync(TEntity)` and `Update(TEntity)` / `Update(IEnumerable<TEntity>)` reads the key values through the EF Core model instead of looking up a public property of the same name. Keys mapped to a field or to a shadow property (value set with `context.Entry(entity).Property(name).CurrentValue`) no longer fail with "The primary key value of the entity to be updated is not valid."; the check still rejects `null` or all-default key values and leaves a rejected entity untracked. Keys on public properties behave as before.
