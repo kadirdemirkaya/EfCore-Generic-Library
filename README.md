@@ -25,6 +25,7 @@ public class PersonService(IUnitOfWork<Person> unitOfWork)
 - Generic read and write repositories with filtering, includes, tracking control and projection
 - Lookup by primary key, including composite keys (`GetByIdAsync(new object[] { ... })`)
 - Unit of work per entity with access to every repository flavour
+- Entity-independent unit of work: repositories of several entities on one context, one save or one transaction (retry-strategy aware)
 - Specifications: conditions, includes, ordering, skip/take and no-tracking in one object
 - Pagination with `PaginatedList<T>` (total items, total pages, page index/size)
 - Raw SQL queries with parameters (interpolated or placeholder style) and commands, transactions with isolation level
@@ -133,6 +134,27 @@ List<Person> same = await read.ExecuteQueryAsync("SELECT * FROM Persons WHERE Ag
 ```
 
 `ExecuteQueryInterpolatedAsync` sends every interpolated value as a database parameter. With `ExecuteQueryAsync`, pass values through the `{0}`, `{1}`, ... placeholders and the parameter array; never concatenate or interpolate user input into its SQL text.
+
+## Several entities in one unit of work
+
+`IUnitOfWork` (without a type argument) is not bound to an entity: every repository it returns works on the same context, so changes to different entities are written by one save or inside one transaction. `AddEfCoreRepository` registers it on the context resolved from the container (one per scope with `AddDbContext`); it is bound to the context type of the first `AddEfCoreRepository` call. Without the container, create it with `new UnitOfWork(dbContext)`.
+
+```csharp
+public class CheckoutService(IUnitOfWork unitOfWork)
+{
+    public Task CheckoutAsync(Order order, Payment payment, CancellationToken cancellationToken)
+        => unitOfWork.ExecuteInTransactionAsync(async ct =>
+        {
+            await unitOfWork.GetWriteRepository<Order>().AddAsync(order, ct);
+            await unitOfWork.SaveChangesAsync(ct);
+            await unitOfWork.GetWriteRepository<Payment>().AddAsync(payment, ct);
+        }, IsolationLevel.ReadCommitted, cancellationToken);
+}
+```
+
+`ExecuteInTransactionAsync` runs the delegate through the provider's execution strategy (`Database.CreateExecutionStrategy()`), so a configured retry strategy re-runs the whole delegate; keep it repeatable. Pending changes are saved before the commit. If the delegate, the save or the commit fails, the transaction is rolled back, the change tracker is cleared and the exception is rethrown — nothing of the attempt is written, now or by a later save. Inside an already open transaction the delegate joins it and the owner of that transaction commits or rolls back.
+
+`SaveChangesAsync(CancellationToken)` is available on `IUnitOfWork`, on `UnitOfWork<TEntity>` and on `BaseWriteRepository<TEntity>` (the `IWriteRepository<TEntity>` method already takes a token).
 
 ## Packages
 

@@ -47,6 +47,14 @@ namespace EfCore.Repository.Concretes
 
         public async Task<bool> SaveChangesAsync() => await _dbContext.SaveChangesAsync().ConfigureAwait(false) > 0;
 
+        /// <summary>
+        /// Writes every pending change of the unit of work's context.
+        /// </summary>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns><see langword="true"/> when at least one row was written; otherwise <see langword="false"/>.</returns>
+        public async Task<bool> SaveChangesAsync(CancellationToken cancellationToken)
+            => await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
+
         private TRepository Resolve<TRepository>(Func<TRepository> createOnContext)
             where TRepository : notnull
             => _serviceProvider is null ? createOnContext() : _serviceProvider.GetRequiredService<TRepository>();

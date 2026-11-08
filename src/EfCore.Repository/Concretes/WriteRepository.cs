@@ -167,7 +167,7 @@ namespace EfCore.Repository.Concretes
             _dbContext.Set<TEntity>().RemoveRange(entities);
         }
 
-        public async Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default)
+        public new async Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default)
             => await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false) > 0;
 
         public async Task<int> SaveChangesCountAsync(CancellationToken cancellationToken = default)

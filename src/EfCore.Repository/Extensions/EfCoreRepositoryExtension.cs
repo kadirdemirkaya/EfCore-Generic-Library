@@ -17,6 +17,8 @@ namespace EfCore.Repository.Extensions
         /// Registers the repositories and the unit of work of <typeparamref name="TEntity"/>.
         /// The <typeparamref name="TDbContext"/> is resolved from the container on every resolve, so the
         /// configuration and lifetime given to <c>AddDbContext</c> apply and each scope works on its own context.
+        /// The first call also registers the entity-independent <see cref="IUnitOfWork"/> on that context; later calls keep
+        /// the existing <see cref="IUnitOfWork"/> registration.
         /// </summary>
         /// <typeparam name="TEntity">The entity type.</typeparam>
         /// <typeparam name="TDbContext">The context type, registered with <c>AddDbContext</c>.</typeparam>
@@ -39,6 +41,7 @@ namespace EfCore.Repository.Extensions
             services.Add(new ServiceDescriptor(typeof(IDbReadRepository<TEntity>), sp => new DbReadRepository<TEntity>(sp.GetRequiredService<TDbContext>(), sp), serviceLifetime));
             services.Add(new ServiceDescriptor(typeof(IDbWriteRepository<TEntity>), sp => new DbWriteRepository<TEntity>(sp.GetRequiredService<TDbContext>(), sp), serviceLifetime));
             services.Add(new ServiceDescriptor(typeof(IUnitOfWork<TEntity>), sp => RepositoryFactory<TDbContext>.CreateUnitOfWork<TEntity>(sp.GetRequiredService<TDbContext>(), sp), serviceLifetime));
+            services.TryAdd(new ServiceDescriptor(typeof(IUnitOfWork), sp => new UnitOfWork(sp.GetRequiredService<TDbContext>()), serviceLifetime));
 
             return services;
         }

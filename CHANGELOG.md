@@ -4,6 +4,14 @@ The repository ships two packages: `EfCore.RepositoryPack` (`src/EfCore.Reposito
 (`src/Base.Repository`). Up to 1.3.0 they were versioned independently; from 2.0.0 on both packages always share one
 version number. The release number and the NuGet publish are chosen by the repository owner.
 
+## Unreleased
+
+### Added
+
+- `IUnitOfWork` (no type argument) and its implementation `UnitOfWork`: `GetReadRepository<TEntity>()` and `GetWriteRepository<TEntity>()` for any entity on one shared context, `SaveChangesAsync(CancellationToken)` that writes the changes of every entity in one call, and `ExecuteInTransactionAsync(Func<CancellationToken, Task>, IsolationLevel, CancellationToken)`, which runs the delegate in a transaction through the provider's execution strategy, saves and commits, and on failure rolls back and clears the change tracker. Inside an open transaction the delegate joins it.
+- `AddEfCoreRepository<TEntity, TDbContext>` also registers `IUnitOfWork` on the container-resolved context (first call wins; existing registrations are unchanged).
+- `SaveChangesAsync(CancellationToken)` overloads on `UnitOfWork<TEntity>` and `BaseWriteRepository<TEntity>`. The interfaces `IUnitOfWork<TEntity>` and `IBaseWriteRepository<TEntity>` are unchanged, so existing implementations of them keep compiling.
+
 ## 2.0.0 - 2026-11-08 (both packages)
 
 Everything since `EfCore.RepositoryPack` 1.3.0 / `EfCore.BaseRepositoryPack` 1.2.0, released as one major version.
