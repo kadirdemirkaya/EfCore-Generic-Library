@@ -28,7 +28,8 @@ public class PersonService(IUnitOfWork<Person> unitOfWork)
 - Entity-independent unit of work: repositories of several entities on one context, one save or one transaction (retry-strategy aware)
 - Updates without an immediate save (`Update`), written together with other changes by one `SaveChangesAsync`
 - Set-based updates and deletes by filter or specification (`UpdateWhereAsync`, `DeleteWhereAsync`) in one SQL command
-- Specifications: conditions, includes, ordering, skip/take and no-tracking in one object
+- Specifications: conditions, includes, ordering, skip/take and no-tracking in one object, with opt-in split queries, ignoring global query filters and no-tracking with identity resolution
+- Streaming reads (`StreamAsync`) that return rows one at a time as `IAsyncEnumerable<T>` instead of a list
 - Pagination with `PaginatedList<T>` (total items, total pages, page index/size)
 - Raw SQL queries with parameters (interpolated or placeholder style) and commands, transactions with isolation level
 - Dependency injection registration per entity or by assembly scan
@@ -110,6 +111,47 @@ PaginatedList<Person> result = await read.GetListAsync(page);
 When a `PaginationSpecification` has no `OrderBy`, the repository orders the page by primary key (every key part for composite keys), so pages are stable; an `OrderBy` you set is used as given.
 
 Any `IQueryable<T>` can be paged directly with `ToPaginatedListAsync(pageIndex, pageSize)`; it keeps the order of the query, so order it before paging.
+
+### Query options
+
+Every specification (`Specification`, `PaginationSpecification`, `SpecificationBase`) has three opt-in switches; all default to `false`, which keeps the plain query:
+
+| Property | Effect |
+|---|---|
+| `AsSplitQuery` | Loads included collections with one SQL command per collection instead of one joined command, avoiding a row explosion with several collection includes (relational providers). Combine with a stable `OrderBy` when paging. |
+| `IgnoreQueryFilters` | Skips the model's global query filters (for example soft delete), so hidden rows are returned and, in paginated reads, counted in `TotalItems`. |
+| `AsNoTrackingWithIdentityResolution` | Returns untracked entities, but a row that appears several times (for example the same parent included by several children) is one shared instance. Wins over `AsNoTracking` when both are set. |
+
+```csharp
+var orders = new Specification<Order>
+{
+    AsSplitQuery = true,
+    AsNoTrackingWithIdentityResolution = true,
+    Includes = q => q.Include(o => o.Lines).Include(o => o.Payments),
+    OrderBy = q => q.OrderBy(o => o.Id)
+};
+
+var archived = new PaginationSpecification<Person> { PageIndex = 1, PageSize = 20, IgnoreQueryFilters = true };
+```
+
+### Streaming
+
+`StreamAsync` (extension methods on `IReadRepository<TEntity>`, namespace `EfCore.Repository.Abstractions`, so they also work on the repositories a unit of work returns) returns an `IAsyncEnumerable<TEntity>` that reads the rows one at a time instead of loading a list. It accepts a `Specification<TEntity>` (conditions, includes, ordering, skip/take and query options apply as in `GetListAsync`) or a filter with an optional `asNoTracking`.
+
+```csharp
+var specification = new Specification<Person> { AsNoTracking = true, OrderBy = q => q.OrderBy(p => p.Id) };
+
+await foreach (Person person in read.StreamAsync(specification, cancellationToken))
+{
+    // process one row at a time
+}
+
+await foreach (Person person in read.StreamAsync(p => p.Age > 30, asNoTracking: true))
+{
+}
+```
+
+The query runs when enumeration starts and holds the context's connection until it ends, so do not run other queries on the same context inside the loop. Use `AsNoTracking` for large streams (tracked rows accumulate in the change tracker), and `OrderBy` when the order matters. Cancelling the token (or one passed with `WithCancellation`) stops the enumeration with an `OperationCanceledException`.
 
 ## Writing
 

@@ -42,7 +42,7 @@ namespace EfCore.Repository
 
             IQueryable<TEntity> query = GetSpecifiedQuery(inputQuery, (SpecificationBase<TEntity>)specification);
 
-            if (specification.AsNoTracking)
+            if (specification.AsNoTracking && !specification.AsNoTrackingWithIdentityResolution)
             {
                 query = query.AsNoTracking();
             }
@@ -77,9 +77,24 @@ namespace EfCore.Repository
                 }
             }
 
+            if (specification.IgnoreQueryFilters)
+            {
+                query = query.IgnoreQueryFilters();
+            }
+
             if (specification.AsNoTracking)
             {
                 query = query.AsNoTracking();
+            }
+
+            if (specification.AsNoTrackingWithIdentityResolution)
+            {
+                query = query.AsNoTrackingWithIdentityResolution();
+            }
+
+            if (specification.AsSplitQuery)
+            {
+                query = query.AsSplitQuery();
             }
 
             if (specification.Includes != null)

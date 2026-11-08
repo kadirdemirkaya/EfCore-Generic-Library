@@ -81,6 +81,11 @@ namespace EfCore.Repository
 
             IQueryable<TEntity> countSource = entities;
 
+            if (specification.IgnoreQueryFilters)
+            {
+                countSource = countSource.IgnoreQueryFilters();
+            }
+
             if (specification.Conditions != null && specification.Conditions.Count != 0)
             {
                 foreach (Expression<Func<TEntity, bool>> condition in specification.Conditions)

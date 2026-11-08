@@ -38,7 +38,7 @@ namespace EfCore.Repository.Abstractions
         /// Deletes every row of <typeparamref name="TEntity"/> that matches all <see cref="SpecificationBase{TEntity}.Conditions"/>
         /// of <paramref name="specification"/>, with the same behaviour as
         /// <see cref="DeleteWhereAsync{TEntity}(IWriteRepository{TEntity}, Expression{Func{TEntity, bool}}, CancellationToken)"/>.
-        /// Includes, ordering and the no-tracking flag of the specification do not affect which rows are deleted.
+        /// Includes, ordering and the no-tracking flag of the specification do not affect which rows are deleted; neither do its query options, so global query filters always apply.
         /// </summary>
         /// <typeparam name="TEntity">The entity type.</typeparam>
         /// <param name="repository">The repository whose context runs the command.</param>
@@ -95,7 +95,7 @@ namespace EfCore.Repository.Abstractions
         /// <summary>
         /// Updates every row of <typeparamref name="TEntity"/> that matches all <see cref="SpecificationBase{TEntity}.Conditions"/>
         /// of <paramref name="specification"/>, with the same behaviour as the filter overload of <c>UpdateWhereAsync</c>.
-        /// Includes, ordering and the no-tracking flag of the specification do not affect which rows are updated.
+        /// Includes, ordering and the no-tracking flag of the specification do not affect which rows are updated; neither do its query options, so global query filters always apply.
         /// </summary>
         /// <typeparam name="TEntity">The entity type.</typeparam>
         /// <param name="repository">The repository whose context runs the command.</param>
