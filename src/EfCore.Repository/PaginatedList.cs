@@ -26,5 +26,15 @@
         public long TotalItems { get; }
 
         public IReadOnlyList<TEntity> Items { get; private set; }
+
+        /// <summary>
+        /// <see langword="true"/> when a page precedes this one (<see cref="PageIndex"/> is greater than 1).
+        /// </summary>
+        public bool HasPreviousPage => PageIndex > 1;
+
+        /// <summary>
+        /// <see langword="true"/> when a page follows this one (<see cref="PageIndex"/> is less than <see cref="TotalPages"/>).
+        /// </summary>
+        public bool HasNextPage => PageIndex < TotalPages;
     }
 }

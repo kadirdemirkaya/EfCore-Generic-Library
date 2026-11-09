@@ -30,7 +30,8 @@ public class PersonService(IUnitOfWork<Person> unitOfWork)
 - Set-based updates and deletes by filter or specification (`UpdateWhereAsync`, `DeleteWhereAsync`) in one SQL command
 - Specifications: conditions, includes, ordering, skip/take and no-tracking in one object, with opt-in split queries, ignoring global query filters and no-tracking with identity resolution
 - Streaming reads (`StreamAsync`) that return rows one at a time as `IAsyncEnumerable<T>` instead of a list
-- Pagination with `PaginatedList<T>` (total items, total pages, page index/size)
+- Pagination with `PaginatedList<T>` (total items, total pages, page index/size, previous/next page flags)
+- Keyset (cursor) pagination by a single key (`GetPageAfterAsync`) that seeks instead of skipping and does not shift when rows are inserted
 - Raw SQL queries with parameters (interpolated or placeholder style) and commands, transactions with isolation level
 - Dependency injection registration per entity or by assembly scan
 - Targets .NET 8, .NET 9 and .NET 10
@@ -105,12 +106,38 @@ var page = new PaginationSpecification<Person>
 };
 
 PaginatedList<Person> result = await read.GetListAsync(page);
-// result.Items, result.TotalItems, result.TotalPages, result.PageIndex, result.PageSize
+// result.Items, result.TotalItems, result.TotalPages, result.PageIndex, result.PageSize,
+// result.HasPreviousPage, result.HasNextPage
 ```
 
 When a `PaginationSpecification` has no `OrderBy`, the repository orders the page by primary key (every key part for composite keys), so pages are stable; an `OrderBy` you set is used as given.
 
 Any `IQueryable<T>` can be paged directly with `ToPaginatedListAsync(pageIndex, pageSize)`; it keeps the order of the query, so order it before paging.
+
+### Keyset (cursor) pagination
+
+Page numbers make the database skip every earlier row, which gets slower on deep pages, and rows inserted or deleted while a client pages shift the following pages. `GetPageAfterAsync` (extension methods on `IReadRepository<TEntity>`, namespace `EfCore.Repository.Abstractions`) orders by one key and continues right after the last key the client saw:
+
+```csharp
+KeysetPage<Order, int> page = await read.GetPageAfterAsync(o => o.Id, after: null, pageSize: 50);
+
+while (page.HasNextPage)
+{
+    page = await read.GetPageAfterAsync(o => o.Id, page.NextCursor, 50);
+}
+
+// newest first, only open orders
+KeysetPage<Order, int> latest = await read.GetPageAfterAsync(o => o.Id, null, 20, o => o.IsOpen, descending: true, asNoTracking: true);
+
+// by a string key, with a specification (conditions, includes and query options apply)
+var spec = new SpecificationBase<Customer> { AsNoTracking = true, Includes = q => q.Include(c => c.Orders) };
+KeysetPage<Customer, string> customers = await read.GetPageAfterAsync(c => c.Code, lastCode, 20, spec);
+```
+
+- `KeysetPage<TEntity, TKey>` holds `Items`, `PageSize`, `HasNextPage` and `NextCursor` (the key of the last row; pass it as `after` for the next page). Pass `null` as `after` for the first page.
+- The key must be a single, unique, non-null column such as the primary key or a unique code, of a type implementing `IComparable<TKey>` that the database provider can compare and order (for example `int`, `long`, `DateTime` or `string`). With duplicate key values, rows sharing the cursor's key are skipped. Composite (multi-column) keys are not supported.
+- One query per page reads `pageSize + 1` rows to know whether more follow; there is no total count. Use an index on the key.
+- The key decides the order, so a specification with an `OrderBy`, with `Skip`/`Take`, or a `PaginationSpecification` is rejected with `ArgumentException`.
 
 ### Query options
 
