@@ -33,7 +33,7 @@ public class PersonService(IUnitOfWork<Person> unitOfWork)
 - Streaming reads (`StreamAsync`) that return rows one at a time as `IAsyncEnumerable<T>` instead of a list
 - Pagination with `PaginatedList<T>` (total items, total pages, page index/size, previous/next page flags)
 - Keyset (cursor) pagination by a single key (`GetPageAfterAsync`) that seeks instead of skipping and does not shift when rows are inserted
-- Raw SQL queries with parameters (interpolated or placeholder style) and commands, transactions with isolation level
+- Raw SQL queries and commands with parameters (interpolated or placeholder style), transactions with isolation level
 - Dependency injection registration per entity or by assembly scan
 - Targets .NET 8, .NET 9 and .NET 10
 
@@ -267,6 +267,7 @@ For entities with a concurrency token (`[ConcurrencyCheck]`, `[Timestamp]` or `I
 
 ```csharp
 await using var transaction = await write.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+await write.ExecuteCommandInterpolatedAsync($"UPDATE Persons SET Age = Age + 1 WHERE Id = {id}");
 await write.ExecuteCommandAsync("UPDATE Persons SET Age = Age + 1 WHERE Id = {0}", id);
 await transaction.CommitAsync();
 
@@ -274,7 +275,9 @@ List<Person> rows = await read.ExecuteQueryInterpolatedAsync($"SELECT * FROM Per
 List<Person> same = await read.ExecuteQueryAsync("SELECT * FROM Persons WHERE Age > {0}", minimumAge);
 ```
 
-`ExecuteQueryInterpolatedAsync` sends every interpolated value as a database parameter. With `ExecuteQueryAsync`, pass values through the `{0}`, `{1}`, ... placeholders and the parameter array; never concatenate or interpolate user input into its SQL text.
+`ExecuteQueryInterpolatedAsync` and `ExecuteCommandInterpolatedAsync` send every interpolated value as a database parameter (`null` as database `NULL`), so a value such as `x' OR '1'='1` is only ever compared or stored as text. With `ExecuteQueryAsync` and `ExecuteCommandAsync`, pass values through the `{0}`, `{1}`, ... placeholders and the parameter array; never concatenate or interpolate user input into their SQL text — an interpolated string passed to them is turned into plain text first, so its values end up inside the SQL. `ExecuteCommandAsync(string, CancellationToken)` sends the text without any parameter.
+
+`ExecuteCommandInterpolatedAsync` returns `true` when at least one row was affected, like `ExecuteCommandAsync`. It is an instance method of the write repository classes and an extension method on `IBaseWriteRepository<TEntity>` (`WriteRepositoryExtensions`, namespace `EfCore.Repository.Abstractions`), so it also works on `IWriteRepository<TEntity>` and on the repositories returned by a unit of work. The command runs immediately, bypasses the change tracker and joins the context's current transaction, so a rollback undoes it.
 
 ## Several entities in one unit of work
 

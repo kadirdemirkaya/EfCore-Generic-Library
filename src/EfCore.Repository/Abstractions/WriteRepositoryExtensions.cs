@@ -1,3 +1,4 @@
+using Base.Repository.Abstractions;
 using EfCore.Repository.Concretes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
@@ -8,10 +9,49 @@ namespace EfCore.Repository.Abstractions
     /// <summary>
     /// Write operations for any <see cref="IWriteRepository{TEntity}"/>, including the repositories returned by a unit
     /// of work: updates that mark entities as modified without saving, and set-based updates and deletes that run as one
-    /// database command.
+    /// database command, and interpolated raw SQL commands whose values are sent as database parameters.
     /// </summary>
     public static class WriteRepositoryExtensions
     {
+        /// <summary>
+        /// Runs an interpolated SQL command (for example an <c>UPDATE</c> or <c>DELETE</c>) on the repository's context.
+        /// Every interpolated value is sent as a database parameter, never inlined into the SQL text, so a value cannot
+        /// change the command; <see langword="null"/> values are sent as database <c>NULL</c>. Prefer it to
+        /// <see cref="IBaseWriteRepository{TEntity}.ExecuteCommandAsync(string, CancellationToken)"/> whenever the command
+        /// carries values. The command runs immediately and bypasses the change tracker: no <c>SaveChangesAsync</c> is
+        /// needed, and entities that are already tracked keep their old values. When the context has an active transaction
+        /// (for example from <c>BeginTransactionAsync</c> or <see cref="IUnitOfWork.ExecuteInTransactionAsync"/>), the
+        /// command joins it and a rollback undoes it. Works on every <see cref="IBaseWriteRepository{TEntity}"/>, including
+        /// <see cref="IWriteRepository{TEntity}"/> and the repositories returned by a unit of work.
+        /// </summary>
+        /// <typeparam name="TEntity">The entity type of the repository.</typeparam>
+        /// <param name="repository">The repository whose context runs the command.</param>
+        /// <param name="command">The SQL as an interpolated string, for example <c>$"UPDATE Persons SET Age = {age} WHERE Id = {id}"</c>.</param>
+        /// <param name="cancellationToken">A token to cancel the command.</param>
+        /// <returns><see langword="true"/> when at least one row was affected; otherwise <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="repository"/> or <paramref name="command"/> is <see langword="null"/>.</exception>
+        public static Task<bool> ExecuteCommandInterpolatedAsync<TEntity>(
+            this IBaseWriteRepository<TEntity> repository,
+            FormattableString command,
+            CancellationToken cancellationToken = default)
+            where TEntity : class
+        {
+            if (repository == null)
+            {
+                throw new ArgumentNullException(nameof(repository));
+            }
+
+            if (command == null)
+            {
+                throw new ArgumentNullException(nameof(command));
+            }
+
+            return ExecuteInterpolatedAsync(repository.Table, command, cancellationToken);
+        }
+
+        private static async Task<bool> ExecuteInterpolatedAsync(DbContext context, FormattableString command, CancellationToken cancellationToken)
+            => await context.Database.ExecuteSqlInterpolatedAsync(command, cancellationToken).ConfigureAwait(false) > 0;
+
         /// <summary>
         /// Deletes every row of <typeparamref name="TEntity"/> that matches <paramref name="filter"/> with one database
         /// command, without loading the entities. The command runs immediately and bypasses the change tracker: no

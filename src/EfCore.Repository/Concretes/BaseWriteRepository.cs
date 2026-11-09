@@ -55,14 +55,37 @@ namespace EfCore.Repository.Concretes
             }
         }
 
+        /// <inheritdoc/>
         public async Task<bool> ExecuteCommandAsync(string command, CancellationToken cancellationToken = default)
          => await _dbContext.Database.ExecuteSqlRawAsync(command, cancellationToken).ConfigureAwait(false) > 0;
 
+        /// <inheritdoc/>
         public async Task<bool> ExecuteCommandAsync(string command, params object[] parameters)
             => await _dbContext.Database.ExecuteSqlRawAsync(command, parameters).ConfigureAwait(false) > 0;
 
+        /// <inheritdoc/>
         public async Task<bool> ExecuteCommandAsync(string command, IEnumerable<object> parameters, CancellationToken cancellationToken = default)
             => await _dbContext.Database.ExecuteSqlRawAsync(command, parameters, cancellationToken).ConfigureAwait(false) > 0;
+
+        /// <summary>
+        /// Runs an interpolated SQL command (for example an <c>UPDATE</c> or <c>DELETE</c>) on the repository's context.
+        /// Every interpolated value is sent as a database parameter, never inlined into the SQL text, so a value cannot
+        /// change the command; <see langword="null"/> values are sent as database <c>NULL</c>. The command runs immediately
+        /// and bypasses the change tracker, and it joins the context's current transaction, so a rollback undoes it.
+        /// </summary>
+        /// <param name="command">The SQL as an interpolated string, for example <c>$"UPDATE Persons SET Age = {age} WHERE Id = {id}"</c>.</param>
+        /// <param name="cancellationToken">A token to cancel the command.</param>
+        /// <returns><see langword="true"/> when at least one row was affected; otherwise <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="command"/> is <see langword="null"/>.</exception>
+        public async Task<bool> ExecuteCommandInterpolatedAsync(FormattableString command, CancellationToken cancellationToken = default)
+        {
+            if (command == null)
+            {
+                throw new ArgumentNullException(nameof(command));
+            }
+
+            return await _dbContext.Database.ExecuteSqlInterpolatedAsync(command, cancellationToken).ConfigureAwait(false) > 0;
+        }
 
         public async Task<IDbContextTransaction> BeginTransactionAsync(
         IsolationLevel isolationLevel = IsolationLevel.Unspecified,
