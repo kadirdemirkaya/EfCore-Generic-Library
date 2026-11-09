@@ -7,11 +7,43 @@ namespace EfCore.Repository.Abstractions
 {
     /// <summary>
     /// Read operations for any <see cref="IReadRepository{TEntity}"/>, including the repositories returned by a unit of
-    /// work: queries whose rows are streamed one at a time instead of being loaded into a list, and keyset (cursor)
-    /// pagination by a single key.
+    /// work: queries whose rows are streamed one at a time instead of being loaded into a list, keyset (cursor)
+    /// pagination by a single key, and row counts as <see cref="long"/>.
     /// </summary>
     public static class ReadRepositoryExtensions
     {
+        /// <summary>
+        /// Counts the rows of <typeparamref name="TEntity"/> that match <paramref name="filter"/> and returns the count as a
+        /// <see cref="long"/>, for tables that can hold more than <see cref="int.MaxValue"/> rows. The count runs in the
+        /// database (SQL <c>COUNT</c>); global query filters of the model apply as in <c>CountAsync</c>.
+        /// </summary>
+        /// <typeparam name="TEntity">The entity type.</typeparam>
+        /// <param name="repository">The repository whose context runs the query.</param>
+        /// <param name="filter">An optional condition the rows must match; <see langword="null"/> counts every row.</param>
+        /// <param name="cancellationToken">A token to cancel the query.</param>
+        /// <returns>The number of matching rows.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="repository"/> is <see langword="null"/>.</exception>
+        public static Task<long> LongCountAsync<TEntity>(
+            this IReadRepository<TEntity> repository,
+            Expression<Func<TEntity, bool>>? filter = null,
+            CancellationToken cancellationToken = default)
+            where TEntity : class
+        {
+            if (repository == null)
+            {
+                throw new ArgumentNullException(nameof(repository));
+            }
+
+            IQueryable<TEntity> query = repository.Table.Set<TEntity>();
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            return query.LongCountAsync(cancellationToken);
+        }
+
         /// <summary>
         /// Streams the rows selected by <paramref name="specification"/> one at a time while the caller enumerates them,
         /// without loading the whole result into memory. Conditions, includes, ordering, <c>Skip</c>/<c>Take</c> and the

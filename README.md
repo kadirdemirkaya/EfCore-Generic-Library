@@ -29,6 +29,7 @@ public class PersonService(IUnitOfWork<Person> unitOfWork)
 - Updates without an immediate save (`Update`), written together with other changes by one `SaveChangesAsync`
 - Set-based updates and deletes by filter or specification (`UpdateWhereAsync`, `DeleteWhereAsync`) in one SQL command
 - Specifications: conditions, includes, ordering, skip/take and no-tracking in one object, with opt-in split queries, ignoring global query filters and no-tracking with identity resolution
+- Fluent specification builder (`Where`, `Include`, `OrderByAscending`/`OrderByDescending`, `ThenBy`, `Skip`/`Take`, `Page`, ...) and `And`/`Or`/`Not` for combining conditions into one translatable expression
 - Streaming reads (`StreamAsync`) that return rows one at a time as `IAsyncEnumerable<T>` instead of a list
 - Pagination with `PaginatedList<T>` (total items, total pages, page index/size, previous/next page flags)
 - Keyset (cursor) pagination by a single key (`GetPageAfterAsync`) that seeks instead of skipping and does not shift when rows are inserted
@@ -76,6 +77,8 @@ OrderLine line = await orderLines.GetByIdAsync(new object[] { orderId, lineNumbe
 Person first = await read.GetAsync(p => p.Name == "Ada", q => q.Include(p => p.Baskets));
 List<Person> list = await read.GetListAsync(p => p.Age > 30, asNoTracking: true);
 int count = await read.CountAsync(p => p.Age > 30);
+long total = await read.LongCountAsync();                 // extension, namespace EfCore.Repository.Abstractions
+long adults = await read.LongCountAsync(p => p.Age >= 18);
 bool any = await read.AnyAsync(p => p.Age > 30);
 
 List<PersonDto> dtos = await read.GetListAsync(
@@ -113,6 +116,41 @@ PaginatedList<Person> result = await read.GetListAsync(page);
 When a `PaginationSpecification` has no `OrderBy`, the repository orders the page by primary key (every key part for composite keys), so pages are stable; an `OrderBy` you set is used as given.
 
 Any `IQueryable<T>` can be paged directly with `ToPaginatedListAsync(pageIndex, pageSize)`; it keeps the order of the query, so order it before paging.
+
+### Fluent builder and combined conditions
+
+The extension methods in `SpecificationBuilderExtensions` (namespace `EfCore.Repository`) configure a `Specification<T>` or `PaginationSpecification<T>` and return the same instance, so calls chain. The result is the same specification you would get by setting the properties, and both styles can be mixed:
+
+```csharp
+var specification = new Specification<Person>()
+    .Where(p => p.Age < 100)
+    .Include(p => p.Baskets)                                   // or .Include(q => q.Include(...).ThenInclude(...))
+    .OrderByDescending(p => p.Age)
+    .ThenBy(p => p.Name)
+    .AsNoTracking()
+    .Skip(0)
+    .Take(10);
+
+var page = new PaginationSpecification<Person>()
+    .Where(p => p.IsActive)
+    .OrderByAscending(p => p.Name)
+    .Page(pageIndex: 2, pageSize: 20);
+```
+
+- `Where` adds a condition; several calls are combined with AND. `Include` adds to includes already set.
+- `OrderByAscending` / `OrderByDescending` replace any order already set (the ascending method is not called `OrderBy` because the specification already has an `OrderBy` property); `ThenBy` / `ThenByDescending` add the next key and throw `InvalidOperationException` when no order is set yet.
+- `AsNoTracking()`, `AsNoTrackingWithIdentityResolution()`, `AsSplitQuery()` and `IgnoreQueryFilters()` switch on the matching query option. `Skip`/`Take` reject negative values and `Page` values below 1 with `ArgumentOutOfRangeException`.
+
+For OR and NOT, combine conditions with `And`, `Or` and `Not` (`PredicateExtensions`, namespace `EfCore.Repository.Expressions`) and pass the result to `Where` or to any repository filter. The parameters are rebound into one lambda, so the database provider translates it to SQL `AND` / `OR` / `NOT`:
+
+```csharp
+Expression<Func<Person, bool>> young = p => p.Age < 30;
+Expression<Func<Person, bool>> senior = p => p.Age > 65;
+Expression<Func<Person, bool>> blocked = p => p.IsBlocked;
+
+var specification = new Specification<Person>().Where(young.Or(senior).And(blocked.Not()));
+List<Person> people = await read.GetListAsync(young.Or(senior));
+```
 
 ### Keyset (cursor) pagination
 
