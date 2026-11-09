@@ -43,8 +43,8 @@ namespace EfCore.Repository.Unit.Test
 
             Assert.Multiple(() =>
             {
-                Assert.That(repositoryPack, Is.EqualTo("2.0.0"));
-                Assert.That(baseRepositoryPack, Is.EqualTo("2.0.0"));
+                Assert.That(repositoryPack, Is.EqualTo(baseRepositoryPack));
+                Assert.That(Version.Parse(repositoryPack).Major, Is.GreaterThanOrEqualTo(2));
             });
         }
 

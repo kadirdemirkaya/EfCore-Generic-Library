@@ -306,8 +306,8 @@ Both packages share one version number.
 
 | Package | Version | Purpose |
 |---|---|---|
-| [EfCore.RepositoryPack](https://www.nuget.org/packages/EfCore.RepositoryPack) | 2.0.0 | Repositories, unit of work, specifications, registration |
-| [EfCore.BaseRepositoryPack](https://www.nuget.org/packages/EfCore.BaseRepositoryPack) | 2.0.0 | Base abstractions and options, installed automatically |
+| [EfCore.RepositoryPack](https://www.nuget.org/packages/EfCore.RepositoryPack) | 2.1.0 | Repositories, unit of work, specifications, registration |
+| [EfCore.BaseRepositoryPack](https://www.nuget.org/packages/EfCore.BaseRepositoryPack) | 2.1.0 | Base abstractions and options, installed automatically |
 
 ## Upgrading from 1.x
 

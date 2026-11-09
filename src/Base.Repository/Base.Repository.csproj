@@ -12,7 +12,7 @@
 		<RepositoryUrl>https://github.com/kadirdemirkaya/EfCore-Generic-Library</RepositoryUrl>
 		<PackageTags>EfCore.RepositoryPack</PackageTags>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageReleaseNotes>2.0.0 (breaking, shared version with EfCore.RepositoryPack): targets .NET 8, 9 and 10 with patched EF Core and Microsoft.Extensions versions. Removed IBaseReadRepository.ExecuteQueryAsync(string) (use ExecuteQueryInterpolatedAsync or ExecuteQueryAsync(string, params object[])), DatabaseOptions.RetryCount and IsRetry, and ConfigurationHelpers.GetOptions(IServiceCollection, string). GetByIdAsync returns a nullable entity.</PackageReleaseNotes>
+		<PackageReleaseNotes>2.1.0 (shared version with EfCore.RepositoryPack, no breaking changes): no API changes in this package; XML documentation warns against building raw SQL commands from user input. See CHANGELOG.</PackageReleaseNotes>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 		<PackageProjectUrl>https://github.com/kadirdemirkaya/EfCore-Generic-Library</PackageProjectUrl>
 		<RepositoryType>git</RepositoryType>

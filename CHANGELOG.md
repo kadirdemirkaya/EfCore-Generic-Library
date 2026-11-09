@@ -4,7 +4,7 @@ The repository ships two packages: `EfCore.RepositoryPack` (`src/EfCore.Reposito
 (`src/Base.Repository`). Up to 1.3.0 they were versioned independently; from 2.0.0 on both packages always share one
 version number. The release number and the NuGet publish are chosen by the repository owner.
 
-## Unreleased
+## 2.1.0 - 2026-11-09 (both packages)
 
 ### Added
 
